@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered E-commerce</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF', // Blue-700
+                        secondary: '#DB2777', // Pink-600
+                        accent: '#F59E0B', // Amber-500
+                        background: '#F3F4F6', // Gray-100
+                        textDark: '#1F2937', // Gray-800
+                        textLight: '#6B7280', // Gray-500
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .loader {
+            border-top-color: #3498db;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+
+        /* Additional style for product images to ensure consistency if needed */
+        .product-image {
+            width: 100%;
+            height: 200px; /* Or your desired height */
+            object-fit: cover; /* Ensures the image covers the area without distortion */
+        }
+    </style>
+</head>
+
+<body class="bg-background text-textDark antialiased">
+    <div id="app" class="flex flex-col min-h-screen">
+
+        <!-- Header -->
+        <header class="bg-primary text-white shadow-md">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <h1 class="text-3xl font-bold">ElectroGadget</h1>
+                <nav class="space-x-4">
+                    <a href="#" class="hover:text-accent transition-colors" data-page="home">Home</a>
+                    <a href="#" class="hover:text-accent transition-colors" data-page="products">Products</a>
+                    <a href="#" class="relative hover:text-accent transition-colors" data-page="cart">
+                        <i data-lucide="shopping-cart"></i>
+                        <span id="cart-count"
+                            class="absolute -top-2 -right-2 bg-secondary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                    </a>
+                    <a href="#" id="auth-link" class="hover:text-accent transition-colors" data-page="login">Login</a>
+                    <a href="#" id="profile-link" class="hover:text-accent transition-colors" data-page="profile" style="display:none;">Profile</a>
+                    <button id="logout-button" class="hover:text-accent transition-colors" style="display:none;">Logout</button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-content" class="flex-grow container mx-auto px-4 py-8">
+            <!-- Content will be dynamically inserted here -->
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 text-white py-8 text-center">
+            <p>&copy; <span id="current-year"></span> ElectroGadget. All rights reserved.</p>
+            <p class="mt-2">Powered by AI</p>
+        </footer>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator"
+            class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50"
+            style="display: none;">
+            <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-32 w-32"></div>
+        </div>
+
+        <!-- Modal for Messages -->
+        <div id="message-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50"
+            style="display: none;">
+            <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm mx-auto">
+                <h3 id="modal-title" class="text-xl font-semibold mb-4"></h3>
+                <p id="modal-message" class="text-textLight mb-6"></p>
+                <button id="modal-ok-button"
+                    class="bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates -->
+    <template id="home-page">
+        <div class="text-center">
+            <h2 class="text-4xl font-bold mb-6 text-primary">Welcome to ElectroGadget!</h2>
+            <p class="text-xl text-textLight mb-8">Discover the latest in electronic gadgets, powered by AI.</p>
+            <button data-page="products"
+                class="bg-secondary text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-pink-700 transition-transform hover:scale-105 transform">Shop
+                Now</button>
+        </div>
+        <div class="mt-16">
+            <h3 class="text-2xl font-semibold mb-6 text-center text-textDark">Featured Products</h3>
+            <div id="featured-products" class="grid md:grid-cols-3 gap-8">
+                <!-- Featured products will be loaded here -->
+            </div>
+        </div>
+    </template>
+
+    <template id="product-list-page">
+        <div>
+            <h2 class="text-3xl font-bold mb-8 text-textDark">Our Products</h2>
+            <div class="mb-6 flex justify-between items-center">
+                <input type="text" id="search-bar" placeholder="Search products..." class="border p-2 rounded-md w-1/3">
+                <select id="sort-options" class="border p-2 rounded-md">
+                    <option value="default">Sort by Default</option>
+                    <option value="name-asc">Name (A-Z)</option>
+                    <option value="name-desc">Name (Z-A)</option>
+                    <option value="price-asc">Price (Low-High)</option>
+                    <option value="price-desc">Price (High-Low)</option>
+                </select>
+            </div>
+            <div id="product-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Products will be dynamically inserted here -->
+            </div>
+        </div>
+    </template>
+
+    <template id="product-card">
+        <div
+            class="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col transition-transform hover:scale-105 transform">
+            <img src="" alt="Product Image" class="product-image"> <!-- Apply consistent image styling -->
+            <div class="p-6 flex flex-col flex-grow">
+                <h3 class="text-xl font-semibold mb-2 text-primary product-name"></h3>
+                <p class="text-textLight mb-4 flex-grow product-description"></p>
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-2xl font-bold text-secondary product-price"></p>
+                    <button data-product-id=""
+                        class="add-to-cart-btn bg-accent text-white px-4 py-2 rounded-md hover:bg-amber-600 transition-colors flex items-center">
+                        <i data-lucide="plus" class="mr-2 h-5 w-5"></i> Add
+                    </button>
+                </div>
+                 <button data-product-id="" class="view-details-btn text-primary hover:underline">View Details</button>
+            </div>
+        </div>
+    </template>
+    
+    <template id="product-detail-page">
+        <div class="container mx-auto px-4 py-8">
+            <div class="bg-white shadow-xl rounded-lg overflow-hidden md:flex">
+                <div class="md:w-1/2">
+                    <img id="detail-product-image" src="" alt="Product Image" class="w-full h-auto md:h-full object-cover">
+                </div>
+                <div class="md:w-1/2 p-8">
+                    <h2 id="detail-product-name" class="text-4xl font-bold text-primary mb-4"></h2>
+                    <p id="detail-product-description" class="text-textLight text-lg mb-6"></p>
+                    <p id="detail-product-price" class="text-3xl font-bold text-secondary mb-6"></p>
+                    <div class="flex items-center mb-6">
+                        <label for="quantity" class="mr-4 text-lg text-textDark">Quantity:</label>
+                        <input type="number" id="detail-quantity" value="1" min="1" class="border rounded-md p-2 w-20 text-center">
+                    </div>
+                    <button id="detail-add-to-cart-btn" data-product-id="" class="bg-accent text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-amber-600 transition-colors w-full flex items-center justify-center">
+                        <i data-lucide="shopping-cart" class="mr-2"></i> Add to Cart
+                    </button>
+                    <div class="mt-8">
+                        <h3 class="text-xl font-semibold text-textDark mb-3">AI Features</h3>
+                        <button id="summarize-reviews-btn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors mb-2 w-full">Summarize Reviews</button>
+                        <button id="ask-gemini-btn" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors w-full">Ask AI About Product</button>
+                        <div id="gemini-response-area" class="mt-4 p-4 border rounded-md bg-gray-50" style="display:none;">
+                            <h4 class="font-semibold text-textDark">AI Response:</h4>
+                            <p id="gemini-response-text" class="text-textLight"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+
+    <template id="cart-page">
+        <div>
+            <h2 class="text-3xl font-bold mb-8 text-textDark">Your Shopping Cart</h2>
+            <div id="cart-items-container">
+                <!-- Cart items will be dynamically inserted here -->
+            </div>
+            <div id="empty-cart-message" class="text-center py-8" style="display: none;">
+                <i data-lucide="shopping-bag" class="mx-auto mb-4 h-16 w-16 text-textLight"></i>
+                <p class="text-xl text-textLight">Your cart is empty.</p>
+                <button data-page="products"
+                    class="mt-6 bg-primary text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors">Continue
+                    Shopping</button>
+            </div>
+            <div id="cart-summary" class="mt-8" style="display: none;">
+                <div class="bg-gray-100 p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4 text-textDark">Order Summary</h3>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-textLight">Subtotal:</span>
+                        <span id="cart-subtotal" class="font-semibold text-textDark">$0.00</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-textLight">Shipping:</span>
+                        <span class="font-semibold text-textDark">FREE</span>
+                    </div>
+                    <hr class="my-4">
+                    <div class="flex justify-between text-2xl font-bold">
+                        <span class="text-textDark">Total:</span>
+                        <span id="cart-total" class="text-primary">$0.00</span>
+                    </div>
+                    <button id="checkout-button"
+                        class="mt-6 w-full bg-secondary text-white py-3 rounded-md text-lg font-semibold hover:bg-pink-700 transition-colors">Proceed
+                        to Checkout</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="cart-item">
+        <div class="flex items-center justify-between py-4 border-b border-gray-200 cart-item-row" data-product-id="">
+            <div class="flex items-center">
+                <img src="" alt="Product Image" class="h-20 w-20 object-cover rounded-md mr-4 cart-item-image">
+                <div>
+                    <h4 class="text-lg font-semibold text-textDark cart-item-name"></h4>
+                    <p class="text-sm text-textLight cart-item-price"></p>
+                </div>
+            </div>
+            <div class="flex items-center">
+                <input type="number" value="1" min="1"
+                    class="cart-item-quantity w-16 border text-center rounded-md p-1 mr-4">
+                <button class="remove-from-cart-btn text-red-500 hover:text-red-700 transition-colors">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template id="login-page">
+        <div class="max-w-md mx-auto mt-8">
+            <h2 class="text-3xl font-bold mb-8 text-center text-textDark">Login</h2>
+            <form id="login-form" class="bg-white p-8 rounded-lg shadow-md space-y-6">
+                <div>
+                    <label for="login-email" class="block text-sm font-medium text-textDark">Email</label>
+                    <input type="email" id="login-email" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                </div>
+                <div>
+                    <label for="login-password" class="block text-sm font-medium text-textDark">Password</label>
+                    <input type="password" id="login-password" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                </div>
+                <button type="submit"
+                    class="w-full bg-primary text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">Login</button>
+            </form>
+            <p class="mt-6 text-center text-sm text-textLight">
+                Don't have an account? <a href="#" data-page="register"
+                    class="font-medium text-primary hover:text-blue-700">Register here</a>
+            </p>
+        </div>
+    </template>
+
+    <template id="register-page">
+         <div class="max-w-md mx-auto mt-8">
+            <h2 class="text-3xl font-bold mb-8 text-center text-textDark">Register</h2>
+            <form id="register-form" class="bg-white p-8 rounded-lg shadow-md space-y-6">
+                <div>
+                    <label for="register-name" class="block text-sm font-medium text-textDark">Full Name</label>
+                    <input type="text" id="register-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                </div>
+                <div>
+                    <label for="register-email" class="block text-sm font-medium text-textDark">Email</label>
+                    <input type="email" id="register-email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                </div>
+                <div>
+                    <label for="register-password" class="block text-sm font-medium text-textDark">Password (min. 6 characters)</label>
+                    <input type="password" id="register-password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                </div>
+                <button type="submit" class="w-full bg-secondary text-white py-2 px-4 rounded-md font-semibold hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary transition-colors">Register</button>
+            </form>
+             <p class="mt-6 text-center text-sm text-textLight">
+                Already have an account? <a href="#" data-page="login" class="font-medium text-primary hover:text-blue-700">Login here</a>
+            </p>
+        </div>
+    </template>
+    
+    <template id="profile-page">
+        <div class="max-w-2xl mx-auto">
+            <h2 class="text-3xl font-bold mb-8 text-textDark">My Profile</h2>
+            <div class="bg-white p-8 rounded-lg shadow-md">
+                <div class="space-y-4">
+                    <p><strong>Name:</strong> <span id="profile-user-name"></span></p>
+                    <p><strong>Email:</strong> <span id="profile-user-email"></span></p>
+                    <p><strong>User ID:</strong> <span id="profile-user-id"></span></p>
+                </div>
+                <h3 class="text-2xl font-semibold mt-10 mb-6 text-textDark">Order History</h3>
+                <div id="order-history-container" class="space-y-6">
+                    <!-- Orders will be loaded here -->
+                     <p class="text-textLight">No orders found.</p>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="order-item-card">
+        <div class="border rounded-lg p-4 shadow">
+            <div class="flex justify-between items-center mb-2">
+                <p class="font-semibold">Order ID: <span class="order-id font-normal"></span></p>
+                <p class="text-sm text-textLight">Date: <span class="order-date font-normal"></span></p>
+            </div>
+            <p class="mb-2">Total: <span class="order-total font-bold text-primary"></span></p>
+            <div class="order-products-list space-y-1">
+                <!-- Product items in order -->
+            </div>
+        </div>
+    </template>
+
+
+    <script type="module">
+        // DO NOT EDIT __firebase_config or __app_id - These will be replaced by the CI/CD pipeline
+        const firebaseConfig = __firebase_config;
+        const GEMINI_API_KEY = "__app_id"; // This is a placeholder for the Gemini API Key
+
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import {
+            getAuth,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut as firebaseSignOut, // aliased to avoid conflict
+            onAuthStateChanged,
+            updateProfile
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            doc,
+            addDoc,
+            getDoc,
+            getDocs,
+            setDoc,
+            query,
+            where,
+            orderBy,
+            Timestamp
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import {
+            getStorage,
+            ref,
+            uploadBytes,
+            getDownloadURL
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+
+        // Initialize Firebase
+        let app;
+        let auth;
+        let db;
+        let storage;
+
+        function initializeFirebase() {
+            // Check if firebaseConfig is the placeholder or actual config
+             if (firebaseConfig && Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                try {
+                    app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                    storage = getStorage(app);
+                    console.log("Firebase initialized successfully.");
+                    return true;
+                } catch (error) {
+                    console.error("Error initializing Firebase:", error);
+                    showMessage("Firebase Error", "Could not connect to Firebase services. Some features might be unavailable.", true);
+                    return false;
+                }
+            } else {
+                console.warn("Firebase configuration is missing or is placeholder. App will run in mock mode.");
+                // Use mock objects if Firebase is not configured
+                setupMockFirebase(); 
+                return false; // Indicates Firebase is not "really" initialized
+            }
+        }
+        
+        function setupMockFirebase() {
+            console.log("Setting up Mock Firebase for local development.");
+            // Mock Firebase objects (simplified)
+            const mockAuthModule = {
+                currentUser: null,
+                _users: {}, // email: { password, name, uid, email }
+                _onAuthStateChangedCallback: null,
+                createUserWithEmailAndPassword: async (authInstance, email, password) => {
+                    if (mockAuthModule._users[email]) throw { code: 'auth/email-already-in-use' };
+                    const uid = 'mock-uid-' + Date.now();
+                    const user = { email, uid, displayName: 'Mock User', password }; // Store password for mock signin
+                    mockAuthModule._users[email] = user;
+                    mockAuthModule.currentUser = user;
+                    if(mockAuthModule._onAuthStateChangedCallback) mockAuthModule._onAuthStateChangedCallback(user);
+                    return { user };
+                },
+                signInWithEmailAndPassword: async (authInstance, email, password) => {
+                    const user = mockAuthModule._users[email];
+                    if (!user || user.password !== password) throw { code: 'auth/wrong-password' };
+                    mockAuthModule.currentUser = user;
+                     if(mockAuthModule._onAuthStateChangedCallback) mockAuthModule._onAuthStateChangedCallback(user);
+                    return { user };
+                },
+                signOut: async (authInstance) => {
+                    mockAuthModule.currentUser = null;
+                    if(mockAuthModule._onAuthStateChangedCallback) mockAuthModule._onAuthStateChangedCallback(null);
+                },
+                onAuthStateChanged: (authInstance, callback) => {
+                    mockAuthModule._onAuthStateChangedCallback = callback;
+                    // Simulate initial call
+                    Promise.resolve().then(() => callback(mockAuthModule.currentUser));
+                },
+                updateProfile: async (user, profileData) => {
+                    if (user && user.email && mockAuthModule._users[user.email]) {
+                        mockAuthModule._users[user.email].displayName = profileData.displayName;
+                        user.displayName = profileData.displayName;
+                        if(mockAuthModule._onAuthStateChangedCallback) mockAuthModule._onAuthStateChangedCallback(user); // Notify of changes
+                        return Promise.resolve();
+                    }
+                    return Promise.reject({ code: 'auth/user-not-found' });
+                }
+            };
+            
+            const mockDbModule = {
+                _data: {}, // { collectionName: { docId: data } }
+                collection: (dbInstance, name) => ({ 
+                    _name: name, 
+                    _db: mockDbModule 
+                }),
+                doc: (dbInstanceOrColRef, path, ...pathSegments) => {
+                    let colName, docId;
+                    if (typeof dbInstanceOrColRef._name === 'string') { // It's a collection reference
+                        colName = dbInstanceOrColRef._name;
+                        docId = path; // path is docId here
+                    } else { // It's the db instance
+                        colName = path;
+                        docId = pathSegments[0];
+                    }
+                     if (!mockDbModule._data[colName]) mockDbModule._data[colName] = {};
+                    return { 
+                        _colName: colName, 
+                        _docId: docId, 
+                        _db: mockDbModule,
+                        id: docId // Firestore doc snapshots have an id property
+                    };
+                },
+                addDoc: async (colRef, data) => {
+                    const docId = 'mock-doc-' + Date.now();
+                    if (!mockDbModule._data[colRef._name]) mockDbModule._data[colRef._name] = {};
+                    mockDbModule._data[colRef._name][docId] = JSON.parse(JSON.stringify(data)); // Deep copy
+                    return { id: docId, _colName: colRef._name, _db: mockDbModule };
+                },
+                getDoc: async (docRef) => {
+                    const colData = mockDbModule._data[docRef._colName];
+                    const data = colData ? colData[docRef._docId] : undefined;
+                    return { 
+                        exists: () => !!data, 
+                        data: () => data ? JSON.parse(JSON.stringify(data)) : undefined, // Deep copy
+                        id: docRef._docId 
+                    };
+                },
+                getDocs: async (queryOrColRef) => { // Simplified: assumes colRef, ignores query
+                    const colName = queryOrColRef._name;
+                    const docsData = mockDbModule._data[colName] || {};
+                    const docs = Object.entries(docsData).map(([id, data]) => ({
+                        id,
+                        data: () => JSON.parse(JSON.stringify(data)) // Deep copy
+                    }));
+                    return { docs };
+                },
+                setDoc: async (docRef, data, options) => {
+                     if (!mockDbModule._data[docRef._colName]) mockDbModule._data[docRef._colName] = {};
+                     if (options && options.merge) {
+                        mockDbModule._data[docRef._colName][docRef._docId] = {
+                            ...(mockDbModule._data[docRef._colName][docRef._docId] || {}),
+                            ...JSON.parse(JSON.stringify(data)) // Deep copy
+                        };
+                     } else {
+                        mockDbModule._data[docRef._colName][docRef._docId] = JSON.parse(JSON.stringify(data)); // Deep copy
+                     }
+                },
+                query: (colRef, ...queryConstraints) => colRef, // Mock query just returns collection ref
+                where: () => ({}), // Mock constraint
+                orderBy: () => ({}), // Mock constraint
+                Timestamp: {
+                    fromDate: (date) => ({
+                        toDate: () => date, // Store as JS Date in mock
+                        // Firestore Timestamps have seconds and nanoseconds, mock this if needed for complex queries
+                        seconds: Math.floor(date.getTime() / 1000),
+                        nanoseconds: (date.getTime() % 1000) * 1e6
+                    }),
+                    now: () => {
+                        const now = new Date();
+                        return {
+                             toDate: () => now,
+                             seconds: Math.floor(now.getTime() / 1000),
+                             nanoseconds: (now.getTime() % 1000) * 1e6
+                        };
+                    }
+                }
+            };
+
+            // Replace actual Firebase functions with mock ones
+            app = {}; // Mock app object
+            auth = { _mock: true, ...mockAuthModule }; // Pass the auth object itself as first arg for mock
+            db = { _mock: true, ...mockDbModule };   // Pass the db object itself as first arg for mock
+            storage = { _mock: true }; // Mock storage if needed
+
+            // Global replacements for functions that expect auth/db as first arg
+            window.firebaseAuth = auth; // Store mock auth globally for functions
+            window.firebaseDb = db; // Store mock db globally for functions
+            
+            // Update global Firebase functions to use the mock versions
+            window.createUserWithEmailAndPassword = mockAuthModule.createUserWithEmailAndPassword;
+            window.signInWithEmailAndPassword = mockAuthModule.signInWithEmailAndPassword;
+            window.firebaseSignOut = mockAuthModule.signOut; // aliased
+            window.onAuthStateChanged = mockAuthModule.onAuthStateChanged;
+            window.updateProfile = mockAuthModule.updateProfile;
+
+            window.collection = mockDbModule.collection;
+            window.doc = mockDbModule.doc;
+            window.addDoc = mockDbModule.addDoc;
+            window.getDoc = mockDbModule.getDoc;
+            window.getDocs = mockDbModule.getDocs;
+            window.setDoc = mockDbModule.setDoc;
+            window.query = mockDbModule.query;
+            window.where = mockDbModule.where;
+            window.orderBy = mockDbModule.orderBy;
+            window.Timestamp = mockDbModule.Timestamp;
+
+            console.log("Using MOCK Firebase Auth and Firestore.");
+        }
+
+
+        // Global state
+        let products = [];
+        let cart = []; // { id, name, price, quantity, image }
+        let currentProductDetails = null; // To store details of product for detail page
+
+        // DOM Elements
+        const mainContentEl = document.getElementById('main-content');
+        const cartCountEl = document.getElementById('cart-count');
+        const loadingIndicatorEl = document.getElementById('loading-indicator');
+        const currentYearEl = document.getElementById('current-year');
+        const authLinkEl = document.getElementById('auth-link');
+        const profileLinkEl = document.getElementById('profile-link');
+        const logoutButtonEl = document.getElementById('logout-button');
+        
+        const modalEl = document.getElementById('message-modal');
+        const modalTitleEl = document.getElementById('modal-title');
+        const modalMessageEl = document.getElementById('modal-message');
+        const modalOkButtonEl = document.getElementById('modal-ok-button');
+
+
+        // Initial product data (fallback if Firestore is empty or not available)
+        const initialProductData = [
+            { id: '1', name: 'SmartSphere AI Hub', description: 'Centralize your smart home with AI-powered voice control and automation. Integrates with all major ecosystems.', price: 129.99, imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZWxlY3Ryb25pY3N8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60', stock: 50, category: 'Smart Home' },
+            { id: '2', name: 'NovaSound Wireless Earbuds', description: 'Immersive sound quality with adaptive noise cancellation and 30-hour battery life. Perfect for music lovers and busy professionals.', price: 89.99, imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZWxlY3Ryb25pY3N8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60', stock: 120, category: 'Audio' },
+            { id: '3', name: 'Guardian Security Cam Pro', description: 'AI-powered motion detection, 4K recording, and night vision. Keep your home secure with smart alerts and cloud storage.', price: 159.99, imageUrl: 'https://images.unsplash.com/photo-1588693951525-7b0969589765?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHNlY3VyaXR5JTIwY2FtZXJhfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60', stock: 75, category: 'Security' },
+            { id: '4', name: 'AuraGlow Smart Lamp', description: 'Set the perfect ambiance with millions of colors, tunable white light, and voice control. Syncs with your music and routines.', price: 49.99, imageUrl: 'https://images.unsplash.com/photo-1517991104327-16184EA01765?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fHNtYXJ0JTIwbGFtcHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60', stock: 200, category: 'Smart Home' },
+            { id: '5', name: 'FlexiFit Fitness Tracker', description: 'Monitor your activity, sleep, heart rate, and more. Waterproof design with GPS and personalized coaching.', price: 79.99, imageUrl: 'https://images.unsplash.com/photo-1508685096489-7f783c934cb4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Zml0bmVzcyUyMHRyYWNrZXJ8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60', stock: 90, category: 'Wearables' },
+            { id: '6', name: 'RoboChef AI Kitchen Assistant', description: 'Automated cooking robot with guided recipes and voice commands. Makes gourmet meals effortless.', price: 499.99, imageUrl: 'https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8a2l0Y2hlbiUyMGFzc2lzdGFudHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60', stock: 30, category: 'Kitchen Tech' }
+        ];
+
+        // Utility Functions
+        function showLoading(isLoading) {
+            if (loadingIndicatorEl) loadingIndicatorEl.style.display = isLoading ? 'flex' : 'none';
+        }
+
+        function showMessage(title, message, isError = false) {
+            if (modalEl && modalTitleEl && modalMessageEl && modalOkButtonEl) {
+                modalTitleEl.textContent = title;
+                modalMessageEl.textContent = message;
+                modalTitleEl.className = isError ? 'text-xl font-semibold mb-4 text-red-600' : 'text-xl font-semibold mb-4 text-blue-600';
+                modalEl.style.display = 'flex';
+            } else { // Fallback if modal elements are somehow not found
+                alert(`${title}: ${message}`);
+            }
+        }
+        if(modalOkButtonEl) modalOkButtonEl.addEventListener('click', () => modalEl.style.display = 'none');
+
+
+        // Product Functions
+        async function fetchProducts() {
+            showLoading(true);
+            try {
+                if (db && !db._mock) { // Check if db is initialized and not mock
+                    const productsCollection = collection(db, 'products');
+                    const productSnapshot = await getDocs(productsCollection);
+                    if (productSnapshot.empty) {
+                        console.log('No products found in Firestore, populating with initial data...');
+                        await populateInitialProducts(); // Populate Firestore
+                         products = [...initialProductData]; // Use in-memory data immediately
+                    } else {
+                        products = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    }
+                } else { // Fallback for mock or uninitialized db
+                    console.log("Using mock/initial product data as Firebase is not fully initialized or in mock mode.");
+                    products = [...initialProductData]; // Use local initial data
+                }
+            } catch (error) {
+                console.error("Error fetching products:", error);
+                showMessage("Error", "Could not load products. Please try again later.", true);
+                products = [...initialProductData]; // Fallback to initial data on error
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function populateInitialProducts() {
+            if (!db || db._mock) { // Don't run if db is mock or not initialized
+                console.log("Skipping Firestore population for mock/uninitialized DB.");
+                return;
+            }
+            console.log("Populating Firestore with initial products...");
+            const productsCollection = collection(db, 'products');
+            for (const product of initialProductData) {
+                try {
+                    // Use product.id as the document ID in Firestore
+                    await setDoc(doc(productsCollection, product.id), product);
+                } catch (error) {
+                    console.error(`Error adding product ${product.id} to Firestore:`, error);
+                }
+            }
+            console.log("Initial products populated in Firestore.");
+        }
+
+
+        function renderProductCard(product) {
+            const template = document.getElementById('product-card');
+            const card = template.content.cloneNode(true);
+            card.querySelector('img').src = product.imageUrl;
+            card.querySelector('img').alt = product.name;
+            card.querySelector('.product-name').textContent = product.name;
+            card.querySelector('.product-description').textContent = product.description.substring(0, 60) + '...';
+            card.querySelector('.product-price').textContent = `$${product.price.toFixed(2)}`;
+            card.querySelector('.add-to-cart-btn').dataset.productId = product.id;
+            card.querySelector('.view-details-btn').dataset.productId = product.id;
+            return card;
+        }
+
+        function displayProducts(productArray = products, searchTerm = '', sortOption = 'default') {
+            const productListEl = document.getElementById('product-list');
+            if (!productListEl) return;
+
+            let filteredProducts = productArray;
+
+            // Filter by search term
+            if (searchTerm) {
+                searchTerm = searchTerm.toLowerCase();
+                filteredProducts = filteredProducts.filter(p =>
+                    p.name.toLowerCase().includes(searchTerm) ||
+                    p.description.toLowerCase().includes(searchTerm) ||
+                    (p.category && p.category.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            // Sort products
+            switch (sortOption) {
+                case 'name-asc':
+                    filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'name-desc':
+                    filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
+                    break;
+                case 'price-asc':
+                    filteredProducts.sort((a, b) => a.price - b.price);
+                    break;
+                case 'price-desc':
+                    filteredProducts.sort((a, b) => b.price - a.price);
+                    break;
+                // default: no specific sort needed beyond original/Firestore order
+            }
+
+
+            productListEl.innerHTML = ''; // Clear previous products
+            if (filteredProducts.length === 0) {
+                productListEl.innerHTML = '<p class="col-span-full text-center text-textLight">No products found matching your criteria.</p>';
+            } else {
+                filteredProducts.forEach(product => {
+                    const card = renderProductCard(product);
+                    productListEl.appendChild(card);
+                });
+            }
+            lucide.createIcons(); // Re-render icons if any were added
+        }
+        
+        async function fetchProductDetails(productId) {
+            showLoading(true);
+            try {
+                if (db && !db._mock) {
+                    const productRef = doc(db, "products", productId);
+                    const docSnap = await getDoc(productRef);
+                    if (docSnap.exists()) {
+                        currentProductDetails = { id: docSnap.id, ...docSnap.data() };
+                    } else {
+                        console.warn(`Product with ID ${productId} not found in Firestore.`);
+                        currentProductDetails = initialProductData.find(p => p.id === productId); // Fallback
+                    }
+                } else {
+                    currentProductDetails = initialProductData.find(p => p.id === productId);
+                    if(!currentProductDetails) console.warn(`Product with ID ${productId} not found in mock/initial data.`);
+                }
+                
+                if (!currentProductDetails) {
+                    showMessage("Error", "Product details not found.", true);
+                    navigateTo('products'); // Go back to product list if product not found
+                    return null;
+                }
+                return currentProductDetails;
+
+            } catch (error) {
+                console.error("Error fetching product details:", error);
+                showMessage("Error", "Could not load product details.", true);
+                return null;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+
+        // Cart Functions
+        function updateCartCount() {
+            const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+            if (cartCountEl) cartCountEl.textContent = count;
+        }
+
+        function addToCart(productId, quantity = 1) {
+            const product = products.find(p => p.id === productId) || (currentProductDetails && currentProductDetails.id === productId ? currentProductDetails : null) ;
+            if (!product) {
+                showMessage("Error", "Product not found.", true);
+                return;
+            }
+
+            const existingItem = cart.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                cart.push({ ...product, quantity });
+            }
+            updateCartCount();
+            saveCart();
+            showMessage("Added to Cart", `${product.name} has been added to your cart.`);
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCartCount();
+            saveCart();
+            renderCartPageContents(); // Re-render cart items
+            showMessage("Cart Updated", "Item removed from cart.");
+        }
+
+        function updateCartItemQuantity(productId, quantity) {
+            const item = cart.find(i => i.id === productId);
+            if (item) {
+                item.quantity = Math.max(0, quantity); // Ensure quantity is not negative
+                if (item.quantity === 0) {
+                    removeFromCart(productId); // Remove if quantity becomes zero
+                } else {
+                    updateCartCount();
+                    saveCart();
+                    renderCartPageContents(); // Re-render cart items
+                }
+            }
+        }
+        
+        function saveCart() {
+            // Save to local storage for guest users or if Firebase is not available
+            localStorage.setItem('guestCart', JSON.stringify(cart));
+            // If user is logged in and Firebase is available, save to Firestore
+            if (auth && auth.currentUser && db && !db._mock) {
+                saveCartToFirestore(auth.currentUser.uid);
+            }
+        }
+
+        async function saveCartToFirestore(userId) {
+            try {
+                const userCartRef = doc(db, "userCarts", userId);
+                await setDoc(userCartRef, { items: cart, updatedAt: Timestamp.now(db) }); // Use Timestamp.now(db) for mock compatibility
+                console.log("Cart saved to Firestore for user:", userId);
+            } catch (error) {
+                console.error("Error saving cart to Firestore:", error);
+                showMessage("Cart Sync Error", "Could not sync your cart with the cloud.", true);
+            }
+        }
+        
+        function loadCart() {
+            const guestCartJson = localStorage.getItem('guestCart');
+            if (guestCartJson) {
+                cart = JSON.parse(guestCartJson);
+            } else {
+                cart = [];
+            }
+            // If user is logged in and Firebase available, try loading from Firestore
+            // This will override local cart if Firestore cart exists
+            if (auth && auth.currentUser && db && !db._mock) {
+                loadCartFromFirestore(auth.currentUser.uid); // This is async, cart may update after initial load
+            } else {
+                 updateCartCount(); // Update count from local storage if no Firebase
+            }
+        }
+
+        async function loadCartFromFirestore(userId) {
+            try {
+                const userCartRef = doc(db, "userCarts", userId);
+                const docSnap = await getDoc(userCartRef);
+                if (docSnap.exists()) {
+                    cart = docSnap.data().items || [];
+                    console.log("Cart loaded from Firestore for user:", userId);
+                } else {
+                    console.log("No cart found in Firestore for user, local cart (if any) will be used and then saved to Firestore.");
+                    // If a guest cart existed, it's already in `cart`. Now save it to Firestore for this new/returning user.
+                    await saveCartToFirestore(userId);
+                }
+            } catch (error) {
+                console.error("Error loading cart from Firestore:", error);
+                // Keep local cart as fallback
+            } finally {
+                updateCartCount(); // Update UI with cart from Firestore or merged cart
+                if (getCurrentPageId() === 'cart') renderCartPageContents(); // Re-render if on cart page
+            }
+        }
+
+
+        // Navigation and Page Rendering
+        function clearMainContent() {
+            if (mainContentEl) mainContentEl.innerHTML = '';
+        }
+        
+        function getCurrentPageId() {
+            return mainContentEl ? mainContentEl.dataset.currentPage : null;
+        }
+
+        function renderPage(pageId, content) {
+            clearMainContent();
+            if (mainContentEl) {
+                 mainContentEl.appendChild(content);
+                 mainContentEl.dataset.currentPage = pageId; // Store current page
+            }
+            lucide.createIcons(); // Initialize any new icons
+        }
+
+        function renderHomePageContent() {
+            const template = document.getElementById('home-page');
+            renderPage('home', template.content.cloneNode(true));
+            
+            // Optionally load some featured products
+            const featuredProductsEl = document.getElementById('featured-products');
+            if (featuredProductsEl) {
+                const featured = products.slice(0, 3); // Example: first 3 products
+                featured.forEach(product => {
+                    const card = renderProductCard(product);
+                    featuredProductsEl.appendChild(card);
+                });
+                lucide.createIcons();
+            }
+        }
+
+        function renderProductListPageContent() {
+            const template = document.getElementById('product-list-page');
+            renderPage('products', template.content.cloneNode(true));
+            displayProducts(); // Display all products initially
+
+            document.getElementById('search-bar')?.addEventListener('input', (e) => {
+                displayProducts(products, e.target.value, document.getElementById('sort-options').value);
+            });
+            document.getElementById('sort-options')?.addEventListener('change', (e) => {
+                displayProducts(products, document.getElementById('search-bar').value, e.target.value);
+            });
+        }
+        
+        async function renderProductDetailPageContent(productId) {
+            const product = await fetchProductDetails(productId);
+            if (!product) return; // Error handled in fetchProductDetails
+
+            const template = document.getElementById('product-detail-page');
+            const pageContent = template.content.cloneNode(true);
+
+            pageContent.getElementById('detail-product-image').src = product.imageUrl;
+            pageContent.getElementById('detail-product-image').alt = product.name;
+            pageContent.getElementById('detail-product-name').textContent = product.name;
+            pageContent.getElementById('detail-product-description').textContent = product.description;
+            pageContent.getElementById('detail-product-price').textContent = `$${product.price.toFixed(2)}`;
+            pageContent.getElementById('detail-add-to-cart-btn').dataset.productId = product.id;
+            
+            pageContent.getElementById('detail-add-to-cart-btn').onclick = () => {
+                const quantity = parseInt(document.getElementById('detail-quantity').value) || 1;
+                addToCart(product.id, quantity);
+            };
+            pageContent.getElementById('summarize-reviews-btn').onclick = () => callGeminiForSummary(product);
+            pageContent.getElementById('ask-gemini-btn').onclick = () => askGeminiAboutProduct(product);
+
+            renderPage('product-detail', pageContent);
+        }
+
+
+        function renderCartPageContents() { // Renamed to avoid conflict with navigateTo('cart')
+            const template = document.getElementById('cart-page');
+            const pageContent = template.content.cloneNode(true); // Get fresh template content
+            
+            const itemsContainer = pageContent.getElementById('cart-items-container');
+            const emptyCartMsgEl = pageContent.getElementById('empty-cart-message');
+            const cartSummaryEl = pageContent.getElementById('cart-summary');
+
+            if (!itemsContainer || !emptyCartMsgEl || !cartSummaryEl) {
+                console.error("Cart page elements not found in template.");
+                return;
+            }
+            
+            itemsContainer.innerHTML = ''; // Clear previous items
+
+            if (cart.length === 0) {
+                emptyCartMsgEl.style.display = 'block';
+                cartSummaryEl.style.display = 'none';
+            } else {
+                emptyCartMsgEl.style.display = 'none';
+                cartSummaryEl.style.display = 'block';
+                let subtotal = 0;
+                const itemTemplate = document.getElementById('cart-item');
+
+                cart.forEach(item => {
+                    const cartItemNode = itemTemplate.content.cloneNode(true);
+                    cartItemNode.querySelector('.cart-item-row').dataset.productId = item.id;
+                    cartItemNode.querySelector('.cart-item-image').src = item.imageUrl;
+                    cartItemNode.querySelector('.cart-item-image').alt = item.name;
+                    cartItemNode.querySelector('.cart-item-name').textContent = item.name;
+                    cartItemNode.querySelector('.cart-item-price').textContent = `$${item.price.toFixed(2)}`;
+                    
+                    const quantityInput = cartItemNode.querySelector('.cart-item-quantity');
+                    quantityInput.value = item.quantity;
+                    quantityInput.addEventListener('change', (e) => {
+                        updateCartItemQuantity(item.id, parseInt(e.target.value));
+                    });
+
+                    cartItemNode.querySelector('.remove-from-cart-btn').addEventListener('click', () => {
+                        removeFromCart(item.id);
+                    });
+                    itemsContainer.appendChild(cartItemNode);
+                    subtotal += item.price * item.quantity;
+                });
+
+                pageContent.getElementById('cart-subtotal').textContent = `$${subtotal.toFixed(2)}`;
+                pageContent.getElementById('cart-total').textContent = `$${subtotal.toFixed(2)}`; // Assuming no tax/shipping for now
+            }
+            
+            pageContent.getElementById('checkout-button')?.addEventListener('click', handleCheckout);
+
+            // Render the fully constructed cart page content
+            // This avoids re-calling navigateTo which would fetch the template again
+            clearMainContent();
+            if (mainContentEl) {
+                 mainContentEl.appendChild(pageContent);
+                 mainContentEl.dataset.currentPage = 'cart';
+            }
+            lucide.createIcons();
+        }
+        
+        function renderLoginPageContent() {
+            const template = document.getElementById('login-page');
+            renderPage('login', template.content.cloneNode(true));
+            document.getElementById('login-form')?.addEventListener('submit', handleLogin);
+        }
+
+        function renderRegisterPageContent() {
+            const template = document.getElementById('register-page');
+            renderPage('register', template.content.cloneNode(true));
+            document.getElementById('register-form')?.addEventListener('submit', handleRegister);
+        }
+        
+        function renderProfilePageContent(user) {
+            if (!user) {
+                showMessage("Access Denied", "You must be logged in to view your profile.", true);
+                navigateTo('login');
+                return;
+            }
+            const template = document.getElementById('profile-page');
+            const pageContent = template.content.cloneNode(true);
+            
+            pageContent.getElementById('profile-user-name').textContent = user.displayName || 'N/A';
+            pageContent.getElementById('profile-user-email').textContent = user.email || 'N/A';
+            pageContent.getElementById('profile-user-id').textContent = user.uid || 'N/A';
+            
+            renderPage('profile', pageContent);
+            loadOrderHistory(user.uid); // Async load orders
+        }
+        
+        async function loadOrderHistory(userId) {
+            const container = document.getElementById('order-history-container');
+            if (!container) return;
+            
+            if (!db || db._mock || !userId) { // Check for mock db or missing userId
+                container.innerHTML = '<p class="text-textLight">Order history is unavailable in mock mode or if not logged in.</p>';
+                return;
+            }
+
+            showLoading(true);
+            container.innerHTML = ''; // Clear previous
+            try {
+                const ordersRef = collection(db, "orders");
+                // Firestore queries require an index for compound queries (e.g., where + orderBy)
+                // For simplicity, we'll just query by userId and sort client-side if needed, or add orderBy('createdAt') if indexed.
+                const q = query(ordersRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    container.innerHTML = '<p class="text-textLight">You have no past orders.</p>';
+                } else {
+                    const orderItemTemplate = document.getElementById('order-item-card');
+                    querySnapshot.forEach(docSnap => {
+                        const order = docSnap.data();
+                        const orderCard = orderItemTemplate.content.cloneNode(true);
+                        orderCard.querySelector('.order-id').textContent = docSnap.id;
+                        // Ensure order.createdAt is a Firestore Timestamp, then convert
+                        let orderDate = 'N/A';
+                        if (order.createdAt && typeof order.createdAt.toDate === 'function') {
+                            orderDate = order.createdAt.toDate().toLocaleDateString();
+                        } else if (order.createdAt) { // Handle ISO string from mock or older data
+                            orderDate = new Date(order.createdAt).toLocaleDateString();
+                        }
+                        orderCard.querySelector('.order-date').textContent = orderDate;
+                        orderCard.querySelector('.order-total').textContent = `$${order.totalAmount.toFixed(2)}`;
+                        
+                        const productsListEl = orderCard.querySelector('.order-products-list');
+                        order.items.forEach(item => {
+                            const p = document.createElement('p');
+                            p.className = 'text-sm text-gray-600';
+                            p.textContent = `${item.name} (x${item.quantity}) - $${(item.price * item.quantity).toFixed(2)}`;
+                            productsListEl.appendChild(p);
+                        });
+                        container.appendChild(orderCard);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching order history:", error);
+                container.innerHTML = '<p class="text-red-500">Could not load order history.</p>';
+                showMessage("Error", "Failed to load your order history.", true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+
+        function navigateTo(pageId, param = null) {
+            showLoading(false); // Hide loader by default, specific pages can show it
+            switch (pageId) {
+                case 'home':
+                    renderHomePageContent();
+                    break;
+                case 'products':
+                    renderProductListPageContent();
+                    break;
+                case 'product-detail':
+                    if(param) renderProductDetailPageContent(param); // param is productId
+                    else {
+                        console.error("Product ID needed for detail page.");
+                        navigateTo('products'); // Fallback
+                    }
+                    break;
+                case 'cart':
+                    renderCartPageContents(); // Use the specific cart rendering function
+                    break;
+                case 'login':
+                    renderLoginPageContent();
+                    break;
+                case 'register':
+                    renderRegisterPageContent();
+                    break;
+                case 'profile':
+                    if (auth && auth.currentUser) {
+                         renderProfilePageContent(auth.currentUser);
+                    } else {
+                        showMessage("Access Denied", "Please login to view your profile.", true);
+                        navigateTo('login');
+                    }
+                    break;
+                default:
+                    console.warn(`Unknown page: ${pageId}. Navigating to home.`);
+                    renderHomePageContent();
+            }
+        }
+
+        // Authentication Functions
+        async function handleRegister(event) {
+            event.preventDefault();
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            showLoading(true);
+            try {
+                // Use globally scoped createUserWithEmailAndPassword (mock or real)
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                if (auth && auth.currentUser) { // auth.currentUser should be set now
+                     // Use globally scoped updateProfile (mock or real)
+                    await updateProfile(auth.currentUser, { displayName: name });
+                    // If using mock, also update the internal store if your mock needs it
+                    if (auth._mock && auth._users && auth._users[email]) {
+                        auth._users[email].displayName = name;
+                    }
+                }
+                showMessage("Registration Successful", "Welcome! Please login with your new account.");
+                navigateTo('login');
+            } catch (error) {
+                console.error("Registration error:", error);
+                showMessage("Registration Failed", error.message || "Could not create account.", true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            showLoading(true);
+            try {
+                // Use globally scoped signInWithEmailAndPassword
+                await signInWithEmailAndPassword(auth, email, password);
+                // Auth state change will handle UI updates and navigation
+                // showMessage("Login Successful", "Welcome back!"); // Handled by onAuthStateChanged
+                // navigateTo('home'); // Handled by onAuthStateChanged
+            } catch (error) {
+                console.error("Login error:", error);
+                showMessage("Login Failed", error.message || "Invalid email or password.", true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function handleLogout() {
+            showLoading(true);
+            try {
+                 // Use globally scoped firebaseSignOut
+                await firebaseSignOut(auth);
+                cart = []; // Clear local cart on logout
+                localStorage.removeItem('guestCart'); // Clear guest cart from local storage
+                updateCartCount();
+                // Auth state change will handle UI updates and navigation
+                showMessage("Logged Out", "You have been successfully logged out.");
+                navigateTo('home');
+            } catch (error) {
+                console.error("Logout error:", error);
+                showMessage("Logout Failed", error.message || "Could not log out.", true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function updateAuthUI(user) {
+            if (user) {
+                authLinkEl.style.display = 'none';
+                profileLinkEl.style.display = 'inline-block';
+                logoutButtonEl.style.display = 'inline-block';
+            } else {
+                authLinkEl.style.display = 'inline-block';
+                authLinkEl.dataset.page = 'login'; // ensure it points to login
+                authLinkEl.textContent = 'Login';
+                profileLinkEl.style.display = 'none';
+                logoutButtonEl.style.display = 'none';
+            }
+        }
+
+
+        // Gemini AI Functions
+        async function callGeminiAPI(prompt) {
+            if (GEMINI_API_KEY === "__app_id" || !GEMINI_API_KEY) {
+                console.warn("Gemini API Key is placeholder or missing. Returning mock response.");
+                 return Promise.resolve("This is a mock AI response as the API key is not configured. Gemini would normally provide a detailed answer here.");
+            }
+
+            showLoading(true);
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Gemini API Error:", errorData);
+                    throw new Error(`Gemini API request failed with status ${response.status}: ${errorData?.error?.message || 'Unknown error'}`);
+                }
+                const data = await response.json();
+                if (data.candidates && data.candidates.length > 0 && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts.length > 0) {
+                    return data.candidates[0].content.parts[0].text;
+                } else {
+                    // Handle cases where the response structure is not as expected (e.g., safety blocks)
+                    if(data.promptFeedback && data.promptFeedback.blockReason) {
+                         throw new Error(`Content blocked by Gemini due to: ${data.promptFeedback.blockReason}`);
+                    }
+                    console.warn("Gemini API response format unexpected:", data);
+                    throw new Error("Could not extract text from Gemini response.");
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                showMessage("AI Error", `Could not get a response from AI: ${error.message}`, true);
+                return null; // Or a default error message string
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function summarizeReviews(product) {
+            // In a real app, you'd fetch reviews for the product. Here, we'll use a mock prompt.
+            const prompt = `Summarize customer reviews for a product named "${product.name}". Key aspects to cover are overall satisfaction, common praises, and frequent complaints. Assume reviews highlight its ease of use but some mention battery life could be better.`;
+            const summary = await callGeminiAPI(prompt);
+            const responseArea = document.getElementById('gemini-response-area');
+            const responseText = document.getElementById('gemini-response-text');
+            if (summary && responseArea && responseText) {
+                responseText.textContent = summary;
+                responseArea.style.display = 'block';
+            } else if (!summary && responseArea) { // If summary is null (error handled by callGeminiAPI)
+                responseText.textContent = "Could not generate summary.";
+                responseArea.style.display = 'block';
+            }
+        }
+
+        async function askGeminiAboutProduct(product) {
+            const userQuestion = prompt(`What would you like to know about ${product.name}?`);
+            if (!userQuestion) return;
+
+            const promptContent = `Regarding the product "${product.name}" (Description: ${product.description}): The user asks: "${userQuestion}". Please provide a concise and helpful answer.`;
+            const answer = await callGeminiAPI(promptContent);
+            const responseArea = document.getElementById('gemini-response-area');
+            const responseText = document.getElementById('gemini-response-text');
+             if (answer && responseArea && responseText) {
+                responseText.textContent = answer;
+                responseArea.style.display = 'block';
+            } else if (!answer && responseArea) {
+                responseText.textContent = "Could not get an answer from AI.";
+                responseArea.style.display = 'block';
+            }
+        }
+        
+        // Checkout
+        async function handleCheckout() {
+            if (cart.length === 0) {
+                showMessage("Empty Cart", "Your cart is empty. Add some products before checking out.", true);
+                return;
+            }
+            if (!auth || !auth.currentUser) {
+                showMessage("Login Required", "Please login or register to proceed with checkout.", true);
+                navigateTo('login');
+                return;
+            }
+
+            showLoading(true);
+            try {
+                // In a real app, this would involve payment processing.
+                // Here, we'll just create an order document in Firestore.
+                const orderData = {
+                    userId: auth.currentUser.uid,
+                    userEmail: auth.currentUser.email, // Store email for convenience
+                    items: cart,
+                    totalAmount: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+                    createdAt: Timestamp.now(db), // Use Timestamp.now(db) for mock compatibility
+                    status: "Pending" // Initial order status
+                };
+                
+                // Use globally scoped addDoc and collection
+                const ordersCollection = collection(db, "orders");
+                await addDoc(ordersCollection, orderData);
+
+                showMessage("Checkout Successful!", "Your order has been placed. Thank you for shopping with us!");
+                cart = []; // Clear the cart
+                saveCart(); // Update storage (local and potentially Firestore for empty cart)
+                updateCartCount();
+                navigateTo('home'); // Or to an order confirmation page
+
+            } catch (error) {
+                console.error("Checkout error:", error);
+                showMessage("Checkout Failed", `There was an issue placing your order: ${error.message}`, true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+
+        // Event Listeners Setup
+        function setupEventListeners() {
+            // Navigation
+            document.body.addEventListener('click', (event) => {
+                const target = event.target.closest('[data-page]');
+                if (target && mainContentEl) { // Ensure mainContentEl is available
+                    event.preventDefault();
+                    navigateTo(target.dataset.page);
+                }
+                // Product card buttons (delegated)
+                if (event.target.classList.contains('add-to-cart-btn')) {
+                    const productId = event.target.dataset.productId;
+                    if(productId) addToCart(productId);
+                }
+                if (event.target.classList.contains('view-details-btn')) {
+                    const productId = event.target.dataset.productId;
+                    if(productId) navigateTo('product-detail', productId);
+                }
+            });
+
+            // Logout button
+            if(logoutButtonEl) logoutButtonEl.addEventListener('click', handleLogout);
+        }
+
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            if(currentYearEl) currentYearEl.textContent = new Date().getFullYear();
+
+            const firebaseInitialized = initializeFirebase(); // Initialize Firebase or mocks
+
+            setupEventListeners();
+            loadCart(); // Load cart (from local or trigger Firestore load if user logged in via onAuthStateChanged)
+
+            if (auth) { // Ensure auth is initialized (even if mock)
+                 // Use globally scoped onAuthStateChanged
+                onAuthStateChanged(auth, async (user) => {
+                    updateAuthUI(user);
+                    if (user) {
+                        console.log("User is logged in:", user.uid);
+                        await loadCartFromFirestore(user.uid); // Load/sync cart after login
+                        // Check if user was on a page that needs auth, or redirect from login/register
+                        const currentPage = getCurrentPageId();
+                        if (currentPage === 'login' || currentPage === 'register') {
+                            navigateTo('home');
+                        }
+                    } else {
+                        console.log("User is logged out.");
+                        loadCartFromLocalStorage(); // Load guest cart if any
+                         // If on a protected page like 'profile', redirect
+                        if (getCurrentPageId() === 'profile') {
+                            navigateTo('home');
+                        }
+                    }
+                });
+            } else {
+                console.error("Auth module not initialized. Auth features will not work.");
+                updateAuthUI(null); // Ensure UI reflects logged-out state
+                loadCartFromLocalStorage(); // Fallback to guest cart
+            }
+
+
+            await fetchProducts(); // Fetch products after Firebase/mocks are ready
+            navigateTo('home'); // Initial page load
+        });
+
+    </script>
+</body>
+</html>
