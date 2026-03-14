@@ -311,7 +311,7 @@ function attachAdminEvents(container, plans, settings, subscriptions, user) {
       try {
         for (const plan of paidPlans) {
           const newPrice = Math.round(plan.price_ars * (1 + pct / 100));
-          await applyInflationToPlan(plan.id, newPrice, plan.price_ars, pct, user.uid, notes);
+          await applyInflationToPlan(plan.id, newPrice, plan.price_ars, pct, user.id, notes);
         }
         alert(`Precios actualizados correctamente.`);
         window.navigateTo && window.navigateTo('admin');

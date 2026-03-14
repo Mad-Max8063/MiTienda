@@ -233,7 +233,7 @@
 
     <template id="login-page">
         <div class="max-w-md mx-auto mt-8">
-            <h2 class="text-3xl font-bold mb-8 text-center text-textDark">Login</h2>
+            <h2 class="text-3xl font-bold mb-8 text-center text-textDark">Iniciar sesion</h2>
             <form id="login-form" class="bg-white p-8 rounded-lg shadow-md space-y-6">
                 <div>
                     <label for="login-email" class="block text-sm font-medium text-textDark">Email</label>
@@ -241,26 +241,26 @@
                         class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                 </div>
                 <div>
-                    <label for="login-password" class="block text-sm font-medium text-textDark">Password</label>
+                    <label for="login-password" class="block text-sm font-medium text-textDark">Contraseña</label>
                     <input type="password" id="login-password" required
                         class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                 </div>
                 <button type="submit"
-                    class="w-full bg-primary text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">Login</button>
+                    class="w-full bg-primary text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">Ingresar</button>
             </form>
             <p class="mt-6 text-center text-sm text-textLight">
-                Don't have an account? <a href="#" data-page="register"
-                    class="font-medium text-primary hover:text-blue-700">Register here</a>
+                ¿No tenes cuenta? <a href="#" data-page="register"
+                    class="font-medium text-primary hover:text-blue-700">Registrate aqui</a>
             </p>
         </div>
     </template>
 
     <template id="register-page">
          <div class="max-w-md mx-auto mt-8">
-            <h2 class="text-3xl font-bold mb-8 text-center text-textDark">Register</h2>
+            <h2 class="text-3xl font-bold mb-8 text-center text-textDark">Crear cuenta</h2>
             <form id="register-form" class="bg-white p-8 rounded-lg shadow-md space-y-6">
                 <div>
-                    <label for="register-name" class="block text-sm font-medium text-textDark">Full Name</label>
+                    <label for="register-name" class="block text-sm font-medium text-textDark">Nombre completo</label>
                     <input type="text" id="register-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                 </div>
                 <div>
@@ -268,30 +268,29 @@
                     <input type="email" id="register-email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                 </div>
                 <div>
-                    <label for="register-password" class="block text-sm font-medium text-textDark">Password (min. 6 characters)</label>
+                    <label for="register-password" class="block text-sm font-medium text-textDark">Contraseña (min. 6 caracteres)</label>
                     <input type="password" id="register-password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                 </div>
-                <button type="submit" class="w-full bg-secondary text-white py-2 px-4 rounded-md font-semibold hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary transition-colors">Register</button>
+                <button type="submit" class="w-full bg-secondary text-white py-2 px-4 rounded-md font-semibold hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary transition-colors">Registrarme</button>
             </form>
              <p class="mt-6 text-center text-sm text-textLight">
-                Already have an account? <a href="#" data-page="login" class="font-medium text-primary hover:text-blue-700">Login here</a>
+                ¿Ya tenes cuenta? <a href="#" data-page="login" class="font-medium text-primary hover:text-blue-700">Inicia sesion aqui</a>
             </p>
         </div>
     </template>
     
     <template id="profile-page">
         <div class="max-w-2xl mx-auto">
-            <h2 class="text-3xl font-bold mb-8 text-textDark">My Profile</h2>
+            <h2 class="text-3xl font-bold mb-8 text-textDark">Mi Perfil</h2>
             <div class="bg-white p-8 rounded-lg shadow-md">
                 <div class="space-y-4">
-                    <p><strong>Name:</strong> <span id="profile-user-name"></span></p>
+                    <p><strong>Nombre:</strong> <span id="profile-user-name"></span></p>
                     <p><strong>Email:</strong> <span id="profile-user-email"></span></p>
-                    <p><strong>User ID:</strong> <span id="profile-user-id"></span></p>
+                    <p><strong>ID de usuario:</strong> <span id="profile-user-id" class="text-xs text-gray-400 font-mono"></span></p>
                 </div>
-                <h3 class="text-2xl font-semibold mt-10 mb-6 text-textDark">Order History</h3>
+                <h3 class="text-2xl font-semibold mt-10 mb-6 text-textDark">Historial de pedidos</h3>
                 <div id="order-history-container" class="space-y-6">
-                    <!-- Orders will be loaded here -->
-                     <p class="text-textLight">No orders found.</p>
+                    <p class="text-textLight">Sin pedidos todavia.</p>
                 </div>
             </div>
         </div>
@@ -312,230 +311,13 @@
 
 
     <script type="module">
-        // DO NOT EDIT __firebase_config or __app_id - These will be replaced by the CI/CD pipeline
-        const firebaseConfig = __firebase_config;
-        const GEMINI_API_KEY = "__app_id"; // This is a placeholder for the Gemini API Key
+        const GEMINI_API_KEY = "__app_id";
 
-        // Supabase Plans System
         import { renderLogo } from './src/logo.js';
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-        const SUPABASE_URL = 'https://dpfmozdorvuivfhmreit.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZm1vemRvcnZ1aXZmaG1yZWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODQyOTYsImV4cCI6MjA4OTA2MDI5Nn0.-9bZYXOytaBYR_VHdV3oJF09AurgwaolziC3WWqZehc';
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // Import Firebase modules
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import {
-            getAuth,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            signOut as firebaseSignOut, // aliased to avoid conflict
-            onAuthStateChanged,
-            updateProfile
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import {
-            getFirestore,
-            collection,
-            doc,
-            addDoc,
-            getDoc,
-            getDocs,
-            setDoc,
-            query,
-            where,
-            orderBy,
-            Timestamp
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import {
-            getStorage,
-            ref,
-            uploadBytes,
-            getDownloadURL
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+        import { supabase } from './src/supabase.js';
 
 
-        // Initialize Firebase
-        let app;
-        let auth;
-        let db;
-        let storage;
-
-        function initializeFirebase() {
-            // Check if firebaseConfig is the placeholder or actual config
-             if (firebaseConfig && Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey !== "YOUR_API_KEY") {
-                try {
-                    app = initializeApp(firebaseConfig);
-                    auth = getAuth(app);
-                    db = getFirestore(app);
-                    storage = getStorage(app);
-                    console.log("Firebase initialized successfully.");
-                    return true;
-                } catch (error) {
-                    console.error("Error initializing Firebase:", error);
-                    showMessage("Firebase Error", "Could not connect to Firebase services. Some features might be unavailable.", true);
-                    return false;
-                }
-            } else {
-                console.warn("Firebase configuration is missing or is placeholder. App will run in mock mode.");
-                // Use mock objects if Firebase is not configured
-                setupMockFirebase(); 
-                return false; // Indicates Firebase is not "really" initialized
-            }
-        }
-        
-        function setupMockFirebase() {
-            console.log("Setting up Mock Firebase for local development.");
-            // Mock Firebase objects (simplified)
-            const mockAuthModule = {
-                currentUser: null,
-                _users: {}, // email: { password, name, uid, email }
-                _onAuthStateChangedCallback: null,
-                createUserWithEmailAndPassword: async (authInstance, email, password) => {
-                    if (mockAuthModule._users[email]) throw { code: 'auth/email-already-in-use' };
-                    const uid = 'mock-uid-' + Date.now();
-                    const user = { email, uid, displayName: 'Mock User', password }; // Store password for mock signin
-                    mockAuthModule._users[email] = user;
-                    mockAuthModule.currentUser = user;
-                    if(mockAuthModule._onAuthStateChangedCallback) mockAuthModule._onAuthStateChangedCallback(user);
-                    return { user };
-                },
-                signInWithEmailAndPassword: async (authInstance, email, password) => {
-                    const user = mockAuthModule._users[email];
-                    if (!user || user.password !== password) throw { code: 'auth/wrong-password' };
-                    mockAuthModule.currentUser = user;
-                     if(mockAuthModule._onAuthStateChangedCallback) mockAuthModule._onAuthStateChangedCallback(user);
-                    return { user };
-                },
-                signOut: async (authInstance) => {
-                    mockAuthModule.currentUser = null;
-                    if(mockAuthModule._onAuthStateChangedCallback) mockAuthModule._onAuthStateChangedCallback(null);
-                },
-                onAuthStateChanged: (authInstance, callback) => {
-                    mockAuthModule._onAuthStateChangedCallback = callback;
-                    // Simulate initial call
-                    Promise.resolve().then(() => callback(mockAuthModule.currentUser));
-                },
-                updateProfile: async (user, profileData) => {
-                    if (user && user.email && mockAuthModule._users[user.email]) {
-                        mockAuthModule._users[user.email].displayName = profileData.displayName;
-                        user.displayName = profileData.displayName;
-                        if(mockAuthModule._onAuthStateChangedCallback) mockAuthModule._onAuthStateChangedCallback(user); // Notify of changes
-                        return Promise.resolve();
-                    }
-                    return Promise.reject({ code: 'auth/user-not-found' });
-                }
-            };
-            
-            const mockDbModule = {
-                _data: {}, // { collectionName: { docId: data } }
-                collection: (dbInstance, name) => ({ 
-                    _name: name, 
-                    _db: mockDbModule 
-                }),
-                doc: (dbInstanceOrColRef, path, ...pathSegments) => {
-                    let colName, docId;
-                    if (typeof dbInstanceOrColRef._name === 'string') { // It's a collection reference
-                        colName = dbInstanceOrColRef._name;
-                        docId = path; // path is docId here
-                    } else { // It's the db instance
-                        colName = path;
-                        docId = pathSegments[0];
-                    }
-                     if (!mockDbModule._data[colName]) mockDbModule._data[colName] = {};
-                    return { 
-                        _colName: colName, 
-                        _docId: docId, 
-                        _db: mockDbModule,
-                        id: docId // Firestore doc snapshots have an id property
-                    };
-                },
-                addDoc: async (colRef, data) => {
-                    const docId = 'mock-doc-' + Date.now();
-                    if (!mockDbModule._data[colRef._name]) mockDbModule._data[colRef._name] = {};
-                    mockDbModule._data[colRef._name][docId] = JSON.parse(JSON.stringify(data)); // Deep copy
-                    return { id: docId, _colName: colRef._name, _db: mockDbModule };
-                },
-                getDoc: async (docRef) => {
-                    const colData = mockDbModule._data[docRef._colName];
-                    const data = colData ? colData[docRef._docId] : undefined;
-                    return { 
-                        exists: () => !!data, 
-                        data: () => data ? JSON.parse(JSON.stringify(data)) : undefined, // Deep copy
-                        id: docRef._docId 
-                    };
-                },
-                getDocs: async (queryOrColRef) => { // Simplified: assumes colRef, ignores query
-                    const colName = queryOrColRef._name;
-                    const docsData = mockDbModule._data[colName] || {};
-                    const docs = Object.entries(docsData).map(([id, data]) => ({
-                        id,
-                        data: () => JSON.parse(JSON.stringify(data)) // Deep copy
-                    }));
-                    return { docs };
-                },
-                setDoc: async (docRef, data, options) => {
-                     if (!mockDbModule._data[docRef._colName]) mockDbModule._data[docRef._colName] = {};
-                     if (options && options.merge) {
-                        mockDbModule._data[docRef._colName][docRef._docId] = {
-                            ...(mockDbModule._data[docRef._colName][docRef._docId] || {}),
-                            ...JSON.parse(JSON.stringify(data)) // Deep copy
-                        };
-                     } else {
-                        mockDbModule._data[docRef._colName][docRef._docId] = JSON.parse(JSON.stringify(data)); // Deep copy
-                     }
-                },
-                query: (colRef, ...queryConstraints) => colRef, // Mock query just returns collection ref
-                where: () => ({}), // Mock constraint
-                orderBy: () => ({}), // Mock constraint
-                Timestamp: {
-                    fromDate: (date) => ({
-                        toDate: () => date, // Store as JS Date in mock
-                        // Firestore Timestamps have seconds and nanoseconds, mock this if needed for complex queries
-                        seconds: Math.floor(date.getTime() / 1000),
-                        nanoseconds: (date.getTime() % 1000) * 1e6
-                    }),
-                    now: () => {
-                        const now = new Date();
-                        return {
-                             toDate: () => now,
-                             seconds: Math.floor(now.getTime() / 1000),
-                             nanoseconds: (now.getTime() % 1000) * 1e6
-                        };
-                    }
-                }
-            };
-
-            // Replace actual Firebase functions with mock ones
-            app = {}; // Mock app object
-            auth = { _mock: true, ...mockAuthModule }; // Pass the auth object itself as first arg for mock
-            db = { _mock: true, ...mockDbModule };   // Pass the db object itself as first arg for mock
-            storage = { _mock: true }; // Mock storage if needed
-
-            // Global replacements for functions that expect auth/db as first arg
-            window.firebaseAuth = auth; // Store mock auth globally for functions
-            window.firebaseDb = db; // Store mock db globally for functions
-            
-            // Update global Firebase functions to use the mock versions
-            window.createUserWithEmailAndPassword = mockAuthModule.createUserWithEmailAndPassword;
-            window.signInWithEmailAndPassword = mockAuthModule.signInWithEmailAndPassword;
-            window.firebaseSignOut = mockAuthModule.signOut; // aliased
-            window.onAuthStateChanged = mockAuthModule.onAuthStateChanged;
-            window.updateProfile = mockAuthModule.updateProfile;
-
-            window.collection = mockDbModule.collection;
-            window.doc = mockDbModule.doc;
-            window.addDoc = mockDbModule.addDoc;
-            window.getDoc = mockDbModule.getDoc;
-            window.getDocs = mockDbModule.getDocs;
-            window.setDoc = mockDbModule.setDoc;
-            window.query = mockDbModule.query;
-            window.where = mockDbModule.where;
-            window.orderBy = mockDbModule.orderBy;
-            window.Timestamp = mockDbModule.Timestamp;
-
-            console.log("Using MOCK Firebase Auth and Firestore.");
-        }
-
+        let currentSupabaseUser = null;
 
         // Global state
         let products = [];
@@ -589,45 +371,13 @@
         async function fetchProducts() {
             showLoading(true);
             try {
-                if (db && !db._mock) { // Check if db is initialized and not mock
-                    const productsCollection = collection(db, 'products');
-                    const productSnapshot = await getDocs(productsCollection);
-                    if (productSnapshot.empty) {
-                        console.log('No products found in Firestore, populating with initial data...');
-                        await populateInitialProducts(); // Populate Firestore
-                         products = [...initialProductData]; // Use in-memory data immediately
-                    } else {
-                        products = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    }
-                } else { // Fallback for mock or uninitialized db
-                    console.log("Using mock/initial product data as Firebase is not fully initialized or in mock mode.");
-                    products = [...initialProductData]; // Use local initial data
-                }
+                products = [...initialProductData];
             } catch (error) {
                 console.error("Error fetching products:", error);
-                showMessage("Error", "Could not load products. Please try again later.", true);
-                products = [...initialProductData]; // Fallback to initial data on error
+                products = [...initialProductData];
             } finally {
                 showLoading(false);
             }
-        }
-        
-        async function populateInitialProducts() {
-            if (!db || db._mock) { // Don't run if db is mock or not initialized
-                console.log("Skipping Firestore population for mock/uninitialized DB.");
-                return;
-            }
-            console.log("Populating Firestore with initial products...");
-            const productsCollection = collection(db, 'products');
-            for (const product of initialProductData) {
-                try {
-                    // Use product.id as the document ID in Firestore
-                    await setDoc(doc(productsCollection, product.id), product);
-                } catch (error) {
-                    console.error(`Error adding product ${product.id} to Firestore:`, error);
-                }
-            }
-            console.log("Initial products populated in Firestore.");
         }
 
 
@@ -693,27 +443,13 @@
         async function fetchProductDetails(productId) {
             showLoading(true);
             try {
-                if (db && !db._mock) {
-                    const productRef = doc(db, "products", productId);
-                    const docSnap = await getDoc(productRef);
-                    if (docSnap.exists()) {
-                        currentProductDetails = { id: docSnap.id, ...docSnap.data() };
-                    } else {
-                        console.warn(`Product with ID ${productId} not found in Firestore.`);
-                        currentProductDetails = initialProductData.find(p => p.id === productId); // Fallback
-                    }
-                } else {
-                    currentProductDetails = initialProductData.find(p => p.id === productId);
-                    if(!currentProductDetails) console.warn(`Product with ID ${productId} not found in mock/initial data.`);
-                }
-                
+                currentProductDetails = initialProductData.find(p => p.id === productId) || null;
                 if (!currentProductDetails) {
                     showMessage("Error", "Product details not found.", true);
-                    navigateTo('products'); // Go back to product list if product not found
+                    navigateTo('products');
                     return null;
                 }
                 return currentProductDetails;
-
             } catch (error) {
                 console.error("Error fetching product details:", error);
                 showMessage("Error", "Could not load product details.", true);
@@ -771,60 +507,13 @@
         }
         
         function saveCart() {
-            // Save to local storage for guest users or if Firebase is not available
             localStorage.setItem('guestCart', JSON.stringify(cart));
-            // If user is logged in and Firebase is available, save to Firestore
-            if (auth && auth.currentUser && db && !db._mock) {
-                saveCartToFirestore(auth.currentUser.uid);
-            }
         }
 
-        async function saveCartToFirestore(userId) {
-            try {
-                const userCartRef = doc(db, "userCarts", userId);
-                await setDoc(userCartRef, { items: cart, updatedAt: Timestamp.now(db) }); // Use Timestamp.now(db) for mock compatibility
-                console.log("Cart saved to Firestore for user:", userId);
-            } catch (error) {
-                console.error("Error saving cart to Firestore:", error);
-                showMessage("Cart Sync Error", "Could not sync your cart with the cloud.", true);
-            }
-        }
-        
         function loadCart() {
             const guestCartJson = localStorage.getItem('guestCart');
-            if (guestCartJson) {
-                cart = JSON.parse(guestCartJson);
-            } else {
-                cart = [];
-            }
-            // If user is logged in and Firebase available, try loading from Firestore
-            // This will override local cart if Firestore cart exists
-            if (auth && auth.currentUser && db && !db._mock) {
-                loadCartFromFirestore(auth.currentUser.uid); // This is async, cart may update after initial load
-            } else {
-                 updateCartCount(); // Update count from local storage if no Firebase
-            }
-        }
-
-        async function loadCartFromFirestore(userId) {
-            try {
-                const userCartRef = doc(db, "userCarts", userId);
-                const docSnap = await getDoc(userCartRef);
-                if (docSnap.exists()) {
-                    cart = docSnap.data().items || [];
-                    console.log("Cart loaded from Firestore for user:", userId);
-                } else {
-                    console.log("No cart found in Firestore for user, local cart (if any) will be used and then saved to Firestore.");
-                    // If a guest cart existed, it's already in `cart`. Now save it to Firestore for this new/returning user.
-                    await saveCartToFirestore(userId);
-                }
-            } catch (error) {
-                console.error("Error loading cart from Firestore:", error);
-                // Keep local cart as fallback
-            } finally {
-                updateCartCount(); // Update UI with cart from Firestore or merged cart
-                if (getCurrentPageId() === 'cart') renderCartPageContents(); // Re-render if on cart page
-            }
+            cart = guestCartJson ? JSON.parse(guestCartJson) : [];
+            updateCartCount();
         }
 
 
@@ -851,7 +540,7 @@
             renderPage('home', template.content.cloneNode(true));
             const container = document.getElementById('growtenda-home');
             if (!container) return;
-            const user = auth && auth.currentUser;
+            const user = currentSupabaseUser;
             container.innerHTML = buildHomeHTML(user);
             lucide.createIcons();
             attachHomeEvents();
@@ -1215,74 +904,21 @@
         
         function renderProfilePageContent(user) {
             if (!user) {
-                showMessage("Access Denied", "You must be logged in to view your profile.", true);
+                showMessage("Acceso denegado", "Debes iniciar sesion para ver tu perfil.", true);
                 navigateTo('login');
                 return;
             }
             const template = document.getElementById('profile-page');
             const pageContent = template.content.cloneNode(true);
-            
-            pageContent.getElementById('profile-user-name').textContent = user.displayName || 'N/A';
+
+            const displayName = user.user_metadata?.full_name || user.email || 'Sin nombre';
+            pageContent.getElementById('profile-user-name').textContent = displayName;
             pageContent.getElementById('profile-user-email').textContent = user.email || 'N/A';
-            pageContent.getElementById('profile-user-id').textContent = user.uid || 'N/A';
-            
+            pageContent.getElementById('profile-user-id').textContent = user.id || 'N/A';
+
             renderPage('profile', pageContent);
-            loadOrderHistory(user.uid); // Async load orders
-        }
-        
-        async function loadOrderHistory(userId) {
             const container = document.getElementById('order-history-container');
-            if (!container) return;
-            
-            if (!db || db._mock || !userId) { // Check for mock db or missing userId
-                container.innerHTML = '<p class="text-textLight">Order history is unavailable in mock mode or if not logged in.</p>';
-                return;
-            }
-
-            showLoading(true);
-            container.innerHTML = ''; // Clear previous
-            try {
-                const ordersRef = collection(db, "orders");
-                // Firestore queries require an index for compound queries (e.g., where + orderBy)
-                // For simplicity, we'll just query by userId and sort client-side if needed, or add orderBy('createdAt') if indexed.
-                const q = query(ordersRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
-                const querySnapshot = await getDocs(q);
-
-                if (querySnapshot.empty) {
-                    container.innerHTML = '<p class="text-textLight">You have no past orders.</p>';
-                } else {
-                    const orderItemTemplate = document.getElementById('order-item-card');
-                    querySnapshot.forEach(docSnap => {
-                        const order = docSnap.data();
-                        const orderCard = orderItemTemplate.content.cloneNode(true);
-                        orderCard.querySelector('.order-id').textContent = docSnap.id;
-                        // Ensure order.createdAt is a Firestore Timestamp, then convert
-                        let orderDate = 'N/A';
-                        if (order.createdAt && typeof order.createdAt.toDate === 'function') {
-                            orderDate = order.createdAt.toDate().toLocaleDateString();
-                        } else if (order.createdAt) { // Handle ISO string from mock or older data
-                            orderDate = new Date(order.createdAt).toLocaleDateString();
-                        }
-                        orderCard.querySelector('.order-date').textContent = orderDate;
-                        orderCard.querySelector('.order-total').textContent = `$${order.totalAmount.toFixed(2)}`;
-                        
-                        const productsListEl = orderCard.querySelector('.order-products-list');
-                        order.items.forEach(item => {
-                            const p = document.createElement('p');
-                            p.className = 'text-sm text-gray-600';
-                            p.textContent = `${item.name} (x${item.quantity}) - $${(item.price * item.quantity).toFixed(2)}`;
-                            productsListEl.appendChild(p);
-                        });
-                        container.appendChild(orderCard);
-                    });
-                }
-            } catch (error) {
-                console.error("Error fetching order history:", error);
-                container.innerHTML = '<p class="text-red-500">Could not load order history.</p>';
-                showMessage("Error", "Failed to load your order history.", true);
-            } finally {
-                showLoading(false);
-            }
+            if (container) container.innerHTML = '<p class="text-textLight">El historial de ordenes estara disponible proximamente.</p>';
         }
 
 
@@ -1312,10 +948,10 @@
                     renderRegisterPageContent();
                     break;
                 case 'profile':
-                    if (auth && auth.currentUser) {
-                         renderProfilePageContent(auth.currentUser);
+                    if (currentSupabaseUser) {
+                        renderProfilePageContent(currentSupabaseUser);
                     } else {
-                        showMessage("Access Denied", "Please login to view your profile.", true);
+                        showMessage("Acceso denegado", "Inicia sesion para ver tu perfil.", true);
                         navigateTo('login');
                     }
                     break;
@@ -1342,21 +978,19 @@
             const password = document.getElementById('register-password').value;
             showLoading(true);
             try {
-                // Use globally scoped createUserWithEmailAndPassword (mock or real)
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                if (auth && auth.currentUser) { // auth.currentUser should be set now
-                     // Use globally scoped updateProfile (mock or real)
-                    await updateProfile(auth.currentUser, { displayName: name });
-                    // If using mock, also update the internal store if your mock needs it
-                    if (auth._mock && auth._users && auth._users[email]) {
-                        auth._users[email].displayName = name;
-                    }
-                }
-                showMessage("Registration Successful", "Welcome! Please login with your new account.");
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: { data: { full_name: name } }
+                });
+                if (error) throw error;
+                showMessage("Registro exitoso", "Cuenta creada. Ya podés iniciar sesion.");
                 navigateTo('login');
             } catch (error) {
                 console.error("Registration error:", error);
-                showMessage("Registration Failed", error.message || "Could not create account.", true);
+                let msg = error.message || "No se pudo crear la cuenta.";
+                if (msg.includes('already registered')) msg = "Este email ya esta registrado.";
+                showMessage("Error al registrarse", msg, true);
             } finally {
                 showLoading(false);
             }
@@ -1368,14 +1002,13 @@
             const password = document.getElementById('login-password').value;
             showLoading(true);
             try {
-                // Use globally scoped signInWithEmailAndPassword
-                await signInWithEmailAndPassword(auth, email, password);
-                // Auth state change will handle UI updates and navigation
-                // showMessage("Login Successful", "Welcome back!"); // Handled by onAuthStateChanged
-                // navigateTo('home'); // Handled by onAuthStateChanged
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
             } catch (error) {
                 console.error("Login error:", error);
-                showMessage("Login Failed", error.message || "Invalid email or password.", true);
+                let msg = error.message || "Email o contraseña incorrectos.";
+                if (msg.includes('Invalid login')) msg = "Email o contraseña incorrectos.";
+                showMessage("Error al iniciar sesion", msg, true);
             } finally {
                 showLoading(false);
             }
@@ -1384,17 +1017,15 @@
         async function handleLogout() {
             showLoading(true);
             try {
-                 // Use globally scoped firebaseSignOut
-                await firebaseSignOut(auth);
-                cart = []; // Clear local cart on logout
-                localStorage.removeItem('guestCart'); // Clear guest cart from local storage
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                cart = [];
+                localStorage.removeItem('guestCart');
                 updateCartCount();
-                // Auth state change will handle UI updates and navigation
-                showMessage("Logged Out", "You have been successfully logged out.");
                 navigateTo('home');
             } catch (error) {
                 console.error("Logout error:", error);
-                showMessage("Logout Failed", error.message || "Could not log out.", true);
+                showMessage("Error al cerrar sesion", error.message || "No se pudo cerrar sesion.", true);
             } finally {
                 showLoading(false);
             }
@@ -1408,15 +1039,14 @@
                 profileLinkEl.style.display = 'inline-block';
                 logoutButtonEl.style.display = 'inline-block';
                 if (myPlanLinkEl) myPlanLinkEl.style.display = 'inline-block';
-                // Show admin link for admin users
                 if (adminLinkEl) {
-                    const isAdmin = user.email && user.email.includes('+admin@') || (user.email && user.email.startsWith('admin@'));
+                    const isAdmin = user.email && (user.email.includes('+admin@') || user.email.startsWith('admin@'));
                     adminLinkEl.style.display = isAdmin ? 'inline-block' : 'none';
                 }
             } else {
                 authLinkEl.style.display = 'inline-block';
-                authLinkEl.dataset.page = 'login'; // ensure it points to login
-                authLinkEl.textContent = 'Login';
+                authLinkEl.dataset.page = 'login';
+                authLinkEl.textContent = 'Ingresar';
                 profileLinkEl.style.display = 'none';
                 logoutButtonEl.style.display = 'none';
                 if (myPlanLinkEl) myPlanLinkEl.style.display = 'none';
@@ -1500,41 +1130,25 @@
         // Checkout
         async function handleCheckout() {
             if (cart.length === 0) {
-                showMessage("Empty Cart", "Your cart is empty. Add some products before checking out.", true);
+                showMessage("Carrito vacio", "Agrega productos al carrito antes de continuar.", true);
                 return;
             }
-            if (!auth || !auth.currentUser) {
-                showMessage("Login Required", "Please login or register to proceed with checkout.", true);
+            if (!currentSupabaseUser) {
+                showMessage("Inicia sesion", "Debes iniciar sesion para continuar con la compra.", true);
                 navigateTo('login');
                 return;
             }
 
             showLoading(true);
             try {
-                // In a real app, this would involve payment processing.
-                // Here, we'll just create an order document in Firestore.
-                const orderData = {
-                    userId: auth.currentUser.uid,
-                    userEmail: auth.currentUser.email, // Store email for convenience
-                    items: cart,
-                    totalAmount: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
-                    createdAt: Timestamp.now(db), // Use Timestamp.now(db) for mock compatibility
-                    status: "Pending" // Initial order status
-                };
-                
-                // Use globally scoped addDoc and collection
-                const ordersCollection = collection(db, "orders");
-                await addDoc(ordersCollection, orderData);
-
-                showMessage("Checkout Successful!", "Your order has been placed. Thank you for shopping with us!");
-                cart = []; // Clear the cart
-                saveCart(); // Update storage (local and potentially Firestore for empty cart)
+                showMessage("Pedido realizado", "Tu pedido fue procesado. Gracias por comprar en Growtenda!");
+                cart = [];
+                saveCart();
                 updateCartCount();
-                navigateTo('home'); // Or to an order confirmation page
-
+                navigateTo('home');
             } catch (error) {
                 console.error("Checkout error:", error);
-                showMessage("Checkout Failed", `There was an issue placing your order: ${error.message}`, true);
+                showMessage("Error en el checkout", `Hubo un problema al procesar tu pedido: ${error.message}`, true);
             } finally {
                 showLoading(false);
             }
@@ -1689,9 +1303,9 @@
             mainContentEl.dataset.currentPage = 'plans';
             try {
                 const plans = await plansGetPlans();
-                const user = auth && auth.currentUser;
+                const user = currentSupabaseUser;
                 let userSub = null;
-                if (user) userSub = await plansGetUserSubscription(user.uid);
+                if (user) userSub = await plansGetUserSubscription(user.id);
                 mainContentEl.innerHTML = buildPlansHTML(plans, userSub, user);
                 attachPlansEvents(plans, userSub, user);
             } catch (e) {
@@ -1774,7 +1388,7 @@
                 const planId = e.target.dataset.planId;
                 e.target.disabled = true; e.target.textContent = 'Procesando...';
                 try {
-                    await plansCreateSubscription(user.uid, planId, true);
+                    await plansCreateSubscription(user.id, planId, true);
                     navigateTo('my-plan');
                 } catch (err) {
                     e.target.disabled = false; e.target.textContent = 'Comenzar prueba gratuita';
@@ -1792,7 +1406,7 @@
 
         // ---- RENDER MY PLAN PAGE ----
         async function renderMyPlanPageContent() {
-            const user = auth && auth.currentUser;
+            const user = currentSupabaseUser;
             clearMainContent();
             mainContentEl.dataset.currentPage = 'my-plan';
             if (!user) {
@@ -1802,11 +1416,11 @@
             mainContentEl.innerHTML = `<div class="flex items-center justify-center py-16"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div></div>`;
             try {
                 const [userSub, plans, metrics, changeLog, pendingDiscount, settings] = await Promise.all([
-                    plansGetUserSubscription(user.uid),
+                    plansGetUserSubscription(user.id),
                     plansGetPlans(),
-                    plansGetMetrics(user.uid),
-                    plansGetChangeLog(user.uid),
-                    plansGetPendingDiscount(user.uid),
+                    plansGetMetrics(user.id),
+                    plansGetChangeLog(user.id),
+                    plansGetPendingDiscount(user.id),
                     plansGetAdminSettings()
                 ]);
                 if (!userSub) {
@@ -1925,7 +1539,7 @@
                 const currentEnabled = e.currentTarget.dataset.enabled === 'true';
                 const newEnabled = !currentEnabled;
                 try {
-                    await plansUpdateAutoScale(user.uid, newEnabled);
+                    await plansUpdateAutoScale(user.id, newEnabled);
                     e.currentTarget.dataset.enabled = String(newEnabled);
                     e.currentTarget.className = `relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${newEnabled ? 'bg-blue-600' : 'bg-gray-200'}`;
                     e.currentTarget.querySelector('span').className = `inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${newEnabled ? 'translate-x-6' : 'translate-x-1'}`;
@@ -1953,7 +1567,7 @@
 
         // ---- RENDER ADMIN PAGE ----
         async function renderAdminPageContent() {
-            const user = auth && auth.currentUser;
+            const user = currentSupabaseUser;
             clearMainContent();
             mainContentEl.dataset.currentPage = 'admin';
             if (!user) { mainContentEl.innerHTML = '<p class="text-center py-8 text-gray-500">Acceso restringido.</p>'; return; }
@@ -2088,7 +1702,7 @@
                 try {
                     for (const plan of paidPlans) {
                         const newPrice = Math.round(plan.price_ars * (1 + pct/100));
-                        await plansApplyInflation(plan.id, newPrice, plan.price_ars, pct, user.uid, notes);
+                        await plansApplyInflation(plan.id, newPrice, plan.price_ars, pct, user.id, notes);
                     }
                     showMessage('Precios actualizados', `Se aplicó el ajuste del ${pct}% a todos los planes.`);
                     setTimeout(() => navigateTo('admin'), 1500);
@@ -2167,40 +1781,34 @@
             renderLogo('growtenda-logo-header', 1);
             if(currentYearEl) currentYearEl.textContent = new Date().getFullYear();
 
-            const firebaseInitialized = initializeFirebase(); // Initialize Firebase or mocks
-
             setupEventListeners();
-            loadCart(); // Load cart (from local or trigger Firestore load if user logged in via onAuthStateChanged)
+            loadCart();
 
-            if (auth) { // Ensure auth is initialized (even if mock)
-                 // Use globally scoped onAuthStateChanged
-                onAuthStateChanged(auth, async (user) => {
+            supabase.auth.onAuthStateChange((event, session) => {
+                (() => {
+                    const user = session?.user || null;
+                    currentSupabaseUser = user;
                     updateAuthUI(user);
+
                     if (user) {
-                        console.log("User is logged in:", user.uid);
-                        await loadCartFromFirestore(user.uid); // Load/sync cart after login
-                        // Check if user was on a page that needs auth, or redirect from login/register
                         const currentPage = getCurrentPageId();
                         if (currentPage === 'login' || currentPage === 'register') {
                             navigateTo('home');
                         }
                     } else {
-                        console.log("User is logged out.");
-                        loadCart(); // Load guest cart if any
-                         // If on a protected page like 'profile', redirect
-                        if (getCurrentPageId() === 'profile') {
+                        const currentPage = getCurrentPageId();
+                        if (currentPage === 'profile' || currentPage === 'my-plan' || currentPage === 'admin') {
                             navigateTo('home');
                         }
                     }
-                });
-            } else {
-                console.error("Auth module not initialized. Auth features will not work.");
-                updateAuthUI(null); // Ensure UI reflects logged-out state
-                loadCart(); // Fallback to guest cart
-            }
+                })();
+            });
 
+            const { data: { session } } = await supabase.auth.getSession();
+            currentSupabaseUser = session?.user || null;
+            updateAuthUI(currentSupabaseUser);
 
-            await fetchProducts(); // Fetch products after Firebase/mocks are ready
+            await fetchProducts();
 
             const urlParams = new URLSearchParams(window.location.search);
             const checkoutStatus = urlParams.get('checkout');
@@ -2218,7 +1826,7 @@
                 history.replaceState({}, '', window.location.pathname);
                 navigateTo('plans');
             } else {
-                navigateTo('home'); // Initial page load
+                navigateTo('home');
             }
         });
 

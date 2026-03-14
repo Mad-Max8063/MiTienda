@@ -22,7 +22,7 @@ export async function renderPlansPage(container) {
     const plans = await getPlans();
     const user = currentUser();
     let userSub = null;
-    if (user) userSub = await getUserSubscription(user.uid);
+    if (user) userSub = await getUserSubscription(user.id);
 
     container.innerHTML = buildPlansPageHTML(plans, userSub, user);
     attachPlansPageEvents(container, plans, userSub, user);
@@ -166,7 +166,7 @@ function attachPlansPageEvents(container, plans, userSub, user) {
         btn.disabled = true;
         btn.textContent = 'Procesando...';
         const planId = btn.dataset.planId;
-        await createSubscription(user.uid, planId, true);
+        await createSubscription(user.id, planId, true);
         window.navigateTo && window.navigateTo('my-plan');
       } catch (err) {
         btn.disabled = false;
@@ -206,11 +206,11 @@ export async function renderMyPlanPage(container, user) {
 
   try {
     const [userSub, plans, metrics, changeLog, pendingDiscount, settings] = await Promise.all([
-      getUserSubscription(user.uid),
+      getUserSubscription(user.id),
       getPlans(),
-      getMonthlyMetrics(user.uid),
-      getPlanChangeLog(user.uid),
-      getPendingLoyaltyDiscount(user.uid),
+      getMonthlyMetrics(user.id),
+      getPlanChangeLog(user.id),
+      getPendingLoyaltyDiscount(user.id),
       getAdminSettings(),
     ]);
 
@@ -415,7 +415,7 @@ function attachMyPlanEvents(container, user, userSub, pendingDiscount) {
       const currentEnabled = btn.dataset.enabled === 'true';
       const newEnabled = !currentEnabled;
       try {
-        await updateAutoScale(user.uid, newEnabled);
+        await updateAutoScale(user.id, newEnabled);
         btn.dataset.enabled = String(newEnabled);
         btn.className = `relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${newEnabled ? 'bg-blue-600' : 'bg-gray-200'}`;
         btn.querySelector('span').className = `inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${newEnabled ? 'translate-x-6' : 'translate-x-1'}`;
