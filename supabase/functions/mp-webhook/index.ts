@@ -7,6 +7,38 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+async function verifyMpSignature(req: Request, rawBody: string): Promise<boolean> {
+  const secret = Deno.env.get("MERCADOPAGO_WEBHOOK_SECRET");
+  if (!secret) return true;
+
+  const xSignature = req.headers.get("x-signature");
+  const xRequestId = req.headers.get("x-request-id");
+  if (!xSignature) return false;
+
+  const params = new URL(req.url).searchParams;
+  const dataId = params.get("data.id") || params.get("id") || "";
+
+  const tsPart = xSignature.split(",").find(p => p.trim().startsWith("ts="));
+  const v1Part = xSignature.split(",").find(p => p.trim().startsWith("v1="));
+  if (!tsPart || !v1Part) return false;
+
+  const ts = tsPart.trim().replace("ts=", "");
+  const v1 = v1Part.trim().replace("v1=", "");
+
+  const manifest = `id:${dataId};request-id:${xRequestId || ""};ts:${ts};`;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(manifest));
+  const computed = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+  return computed === v1;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -21,13 +53,22 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    const rawBody = await req.text();
+    const signatureValid = await verifyMpSignature(req, rawBody);
+    if (!signatureValid) {
+      return new Response(JSON.stringify({ error: "Firma invalida" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body = JSON.parse(rawBody);
+    const { type, data } = body;
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
-
-    const body = await req.json();
-    const { type, data } = body;
 
     if (type === "payment" && data?.id) {
       const paymentResp = await fetch(`https://api.mercadopago.com/v1/payments/${data.id}`, {
@@ -207,13 +248,23 @@ Deno.serve(async (req: Request) => {
         .eq("user_id", userId);
 
       if (subscription.status === "cancelled") {
-        await supabase.from("plan_change_log").insert({
-          user_id: userId,
-          new_plan_id: subscription.external_reference,
-          change_reason: "payment_failed",
-          triggered_by: "mp_webhook",
-          notes: `Suscripcion cancelada en MercadoPago: ${subscription.id}`,
-        });
+        let cancelledPlanId: string | null = null;
+        try {
+          const parsedRef = JSON.parse(subscription.external_reference || "{}");
+          cancelledPlanId = parsedRef.supabase_plan_id || null;
+        } catch {
+          console.error("No se pudo parsear external_reference en cancelacion:", subscription.external_reference);
+        }
+
+        if (cancelledPlanId) {
+          await supabase.from("plan_change_log").insert({
+            user_id: userId,
+            new_plan_id: cancelledPlanId,
+            change_reason: "payment_failed",
+            triggered_by: "mp_webhook",
+            notes: `Suscripcion cancelada en MercadoPago: ${subscription.id}`,
+          });
+        }
       }
     }
 

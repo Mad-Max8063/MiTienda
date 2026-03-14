@@ -106,7 +106,8 @@ Deno.serve(async (req: Request) => {
         results.downgraded++;
 
         const subCreatedAt = new Date(sub.created_at);
-        const monthsActive = (now.getFullYear() - subCreatedAt.getFullYear()) * 12 + (now.getMonth() - subCreatedAt.getMonth());
+        let monthsActive = (now.getFullYear() - subCreatedAt.getFullYear()) * 12 + (now.getMonth() - subCreatedAt.getMonth());
+        if (now.getDate() < subCreatedAt.getDate()) monthsActive--;
 
         if (monthsActive >= loyaltyThreshold) {
           const { data: existingDiscount } = await supabase
