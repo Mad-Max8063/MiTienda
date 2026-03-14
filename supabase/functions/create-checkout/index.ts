@@ -1,6 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import Stripe from "npm:stripe@14";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,99 +57,70 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      return new Response(JSON.stringify({ error: "Stripe no configurado" }), {
+    const mpAccessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
+    if (!mpAccessToken) {
+      return new Response(JSON.stringify({ error: "MercadoPago no configurado" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
-
-    const { data: existingSub } = await supabase
-      .from("user_subscriptions")
-      .select("stripe_customer_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    let customerId = existingSub?.stripe_customer_id;
-
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: { supabase_user_id: user.id },
-      });
-      customerId = customer.id;
-    }
-
-    let stripePriceId = plan.stripe_price_id;
-
-    if (!stripePriceId) {
-      let stripeProductId = plan.stripe_product_id;
-
-      if (!stripeProductId) {
-        const product = await stripe.products.create({
-          name: plan.name,
-          description: plan.description || plan.name,
-          metadata: { supabase_plan_id: plan.id, slug: plan.slug },
-        });
-        stripeProductId = product.id;
-
-        const supabaseAdmin = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-        );
-        await supabaseAdmin
-          .from("plans")
-          .update({ stripe_product_id: stripeProductId })
-          .eq("id", plan.id);
-      }
-
-      const price = await stripe.prices.create({
-        product: stripeProductId,
-        unit_amount: plan.price_ars * 100,
-        currency: "ars",
-        recurring: { interval: "month" },
-        metadata: { supabase_plan_id: plan.id },
-      });
-      stripePriceId = price.id;
-
-      const supabaseAdmin = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
-      await supabaseAdmin
-        .from("plans")
-        .update({ stripe_price_id: stripePriceId })
-        .eq("id", plan.id);
-    }
-
     const origin = successUrl?.split("/").slice(0, 3).join("/") || "http://localhost:5173";
 
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      customer: customerId,
-      mode: "subscription",
-      line_items: [{ price: stripePriceId, quantity: 1 }],
-      subscription_data: {
-        trial_period_days: 30,
-        metadata: {
-          supabase_user_id: user.id,
-          supabase_plan_id: plan.id,
+    const preference = {
+      items: [
+        {
+          id: plan.id,
+          title: plan.name,
+          description: plan.description || plan.name,
+          quantity: 1,
+          currency_id: "ARS",
+          unit_price: plan.price_ars,
         },
+      ],
+      payer: {
+        email: user.email,
       },
-      success_url: successUrl || `${origin}?checkout=success&plan_id=${plan.id}`,
-      cancel_url: cancelUrl || `${origin}?checkout=cancelled`,
+      back_urls: {
+        success: successUrl || `${origin}?checkout=success&plan_id=${plan.id}`,
+        failure: cancelUrl || `${origin}?checkout=cancelled`,
+        pending: `${origin}?checkout=pending&plan_id=${plan.id}`,
+      },
+      auto_return: "approved",
+      external_reference: JSON.stringify({
+        supabase_user_id: user.id,
+        supabase_plan_id: plan.id,
+      }),
+      notification_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/mp-webhook`,
       metadata: {
         supabase_user_id: user.id,
         supabase_plan_id: plan.id,
       },
     };
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${mpAccessToken}`,
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": `checkout-${user.id}-${plan.id}-${Date.now()}`,
+      },
+      body: JSON.stringify(preference),
+    });
+
+    if (!mpResponse.ok) {
+      const mpError = await mpResponse.json();
+      console.error("MercadoPago error:", mpError);
+      return new Response(JSON.stringify({ error: "Error al crear el checkout en MercadoPago" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const mpData = await mpResponse.json();
 
     return new Response(
-      JSON.stringify({ url: session.url, sessionId: session.id }),
+      JSON.stringify({ url: mpData.init_point, preferenceId: mpData.id }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

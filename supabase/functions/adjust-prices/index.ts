@@ -18,8 +18,6 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
-
     const { data: plans, error: plansError } = await supabase
       .from("plans")
       .select("*")
@@ -50,50 +48,13 @@ Deno.serve(async (req: Request) => {
         continue;
       }
 
-      let stripeSync = false;
-      if (stripeKey && plan.stripe_price_id) {
-        try {
-          const priceInCents = Math.round(plan.price_ars * 100);
-          const newPriceResp = await fetch("https://api.stripe.com/v1/prices", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${stripeKey}`,
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: new URLSearchParams({
-              unit_amount: String(priceInCents),
-              currency: "ars",
-              recurring: JSON.stringify({ interval: "month" }),
-              product: plan.stripe_product_id || "",
-              nickname: `${plan.name} - ${new Date().toISOString().substring(0, 7)}`,
-            }),
-          });
-
-          if (newPriceResp.ok) {
-            const newPrice = await newPriceResp.json();
-
-            await fetch(`https://api.stripe.com/v1/prices/${plan.stripe_price_id}`, {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${stripeKey}`,
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-              body: new URLSearchParams({ active: "false" }),
-            });
-
-            await supabase
-              .from("plans")
-              .update({ stripe_price_id: newPrice.id, updated_at: new Date().toISOString() })
-              .eq("id", plan.id);
-
-            stripeSync = true;
-          }
-        } catch (stripeErr) {
-          console.error("Stripe sync error for plan", plan.id, stripeErr);
-        }
-      }
-
-      results.push({ plan_id: plan.id, name: plan.name, status: "ok", current_price: plan.price_ars, stripe_synced: stripeSync });
+      results.push({
+        plan_id: plan.id,
+        name: plan.name,
+        status: "ok",
+        current_price: plan.price_ars,
+        mp_synced: true,
+      });
     }
 
     return new Response(JSON.stringify({ success: true, results }), {

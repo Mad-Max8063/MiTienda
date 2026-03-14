@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 
-export async function createStripeCheckout(planId) {
+export async function createMercadoPagoCheckout(planId) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('No hay sesion activa');
 

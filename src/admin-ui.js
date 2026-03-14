@@ -313,7 +313,7 @@ function attachAdminEvents(container, plans, settings, subscriptions, user) {
           const newPrice = Math.round(plan.price_ars * (1 + pct / 100));
           await applyInflationToPlan(plan.id, newPrice, plan.price_ars, pct, user.uid, notes);
         }
-        alert(`Precios actualizados correctamente. Los cambios se sincronizaran con Stripe automaticamente.`);
+        alert(`Precios actualizados correctamente.`);
         window.navigateTo && window.navigateTo('admin');
       } catch (err) {
         btn.disabled = false;

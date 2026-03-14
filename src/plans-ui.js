@@ -2,7 +2,7 @@ import {
   getPlans, getUserSubscription, createSubscription, updateAutoScale,
   getMonthlyMetrics, getCurrentMonthMetrics, getPlanChangeLog,
   getPendingLoyaltyDiscount, respondToLoyaltyDiscount, getAdminSettings,
-  formatARS, getMonthName, createStripeCheckout, applyLoyaltyCoupon
+  formatARS, getMonthName, createMercadoPagoCheckout, applyLoyaltyCoupon
 } from './plans-service.js';
 
 let _supabaseAuth = null;
@@ -179,7 +179,7 @@ function attachPlansPageEvents(container, plans, userSub, user) {
         btn.disabled = true;
         btn.textContent = 'Redirigiendo...';
         const planId = btn.dataset.planId;
-        const { url } = await createStripeCheckout(planId);
+        const { url } = await createMercadoPagoCheckout(planId);
         window.location.href = url;
       } catch (err) {
         btn.disabled = false;
