@@ -59,19 +59,13 @@
                     <span class="text-2xl font-bold tracking-tight">Growtenda</span>
                 </a>
                 <nav class="space-x-4 flex items-center">
-                    <a href="#" class="hover:text-accent transition-colors" data-page="home">Home</a>
-                    <a href="#" class="hover:text-accent transition-colors" data-page="products">Products</a>
+                    <a href="#" class="hover:text-accent transition-colors" data-page="home">Inicio</a>
                     <a href="#" class="hover:text-accent transition-colors" data-page="plans">Planes</a>
-                    <a href="#" class="relative hover:text-accent transition-colors" data-page="cart">
-                        <i data-lucide="shopping-cart"></i>
-                        <span id="cart-count"
-                            class="absolute -top-2 -right-2 bg-secondary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
-                    </a>
-                    <a href="#" id="auth-link" class="hover:text-accent transition-colors" data-page="login">Login</a>
-                    <a href="#" id="profile-link" class="hover:text-accent transition-colors" data-page="profile" style="display:none;">Profile</a>
-                    <a href="#" id="my-plan-link" class="hover:text-accent transition-colors text-sm" data-page="my-plan" style="display:none;">Mi Plan</a>
+                    <a href="#" id="auth-link" class="hover:text-accent transition-colors" data-page="login">Ingresar</a>
+                    <a href="#" id="profile-link" class="hover:text-accent transition-colors" data-page="profile" style="display:none;">Perfil</a>
+                    <a href="#" id="my-plan-link" class="hover:text-accent transition-colors text-sm font-semibold bg-white bg-opacity-20 px-3 py-1.5 rounded-lg" data-page="my-plan" style="display:none;">Mi Plan</a>
                     <a href="#" id="admin-link" class="hover:text-accent transition-colors text-xs bg-white bg-opacity-20 px-2 py-1 rounded" data-page="admin" style="display:none;">Admin</a>
-                    <button id="logout-button" class="hover:text-accent transition-colors" style="display:none;">Logout</button>
+                    <button id="logout-button" class="hover:text-accent transition-colors text-sm" style="display:none;">Salir</button>
                 </nav>
             </div>
         </header>
@@ -108,19 +102,7 @@
 
     <!-- Templates -->
     <template id="home-page">
-        <div class="text-center">
-            <h2 class="text-4xl font-bold mb-6 text-primary">Bienvenido a Growtenda!</h2>
-            <p class="text-xl text-textLight mb-8">Discover the latest in electronic gadgets, powered by AI.</p>
-            <button data-page="products"
-                class="bg-secondary text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-pink-700 transition-transform hover:scale-105 transform">Shop
-                Now</button>
-        </div>
-        <div class="mt-16">
-            <h3 class="text-2xl font-semibold mb-6 text-center text-textDark">Featured Products</h3>
-            <div id="featured-products" class="grid md:grid-cols-3 gap-8">
-                <!-- Featured products will be loaded here -->
-            </div>
-        </div>
+        <div id="growtenda-home"></div>
     </template>
 
     <template id="product-list-page">
@@ -867,17 +849,257 @@
         function renderHomePageContent() {
             const template = document.getElementById('home-page');
             renderPage('home', template.content.cloneNode(true));
-            
-            // Optionally load some featured products
-            const featuredProductsEl = document.getElementById('featured-products');
-            if (featuredProductsEl) {
-                const featured = products.slice(0, 3); // Example: first 3 products
-                featured.forEach(product => {
-                    const card = renderProductCard(product);
-                    featuredProductsEl.appendChild(card);
-                });
-                lucide.createIcons();
-            }
+            const container = document.getElementById('growtenda-home');
+            if (!container) return;
+            const user = auth && auth.currentUser;
+            container.innerHTML = buildHomeHTML(user);
+            lucide.createIcons();
+            attachHomeEvents();
+        }
+
+        function buildHomeHTML(user) {
+            return `
+            <div class="growtenda-landing">
+
+                <style>
+                    .gt-hero-bg {
+                        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f2d1f 100%);
+                    }
+                    .gt-stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+                    .gt-stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.10); }
+                    .gt-feature-icon { transition: transform 0.2s ease; }
+                    .gt-feature-card:hover .gt-feature-icon { transform: scale(1.15); }
+                    .gt-cta-btn { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+                    .gt-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(34,197,94,0.35); }
+                    .gt-secondary-btn { transition: background 0.15s ease; }
+                    @keyframes gt-pulse-ring {
+                        0% { transform: scale(1); opacity: 0.6; }
+                        100% { transform: scale(1.4); opacity: 0; }
+                    }
+                    .gt-pulse { animation: gt-pulse-ring 2s infinite; }
+                    .gt-badge {
+                        background: linear-gradient(90deg, #16a34a, #22c55e);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                    }
+                    .gt-plan-pill {
+                        transition: background 0.15s, color 0.15s, transform 0.15s;
+                    }
+                    .gt-plan-pill:hover {
+                        background: #16a34a;
+                        color: white;
+                        transform: scale(1.04);
+                    }
+                    .gt-testimonial {
+                        transition: box-shadow 0.2s;
+                    }
+                    .gt-testimonial:hover {
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+                    }
+                </style>
+
+                <!-- HERO -->
+                <section class="gt-hero-bg text-white overflow-hidden">
+                    <div class="max-w-6xl mx-auto px-6 py-24 md:py-32 flex flex-col md:flex-row items-center gap-16">
+                        <div class="flex-1 text-center md:text-left">
+                            <span class="inline-flex items-center gap-2 bg-white bg-opacity-10 border border-white border-opacity-20 text-green-300 text-xs font-semibold px-4 py-1.5 rounded-full mb-6 tracking-widest uppercase">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="gt-pulse absolute inline-flex h-full w-full rounded-full bg-green-400"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-green-400"></span>
+                                </span>
+                                Para vendedores que crecen
+                            </span>
+                            <h1 class="text-5xl md:text-6xl font-black leading-tight mb-6 tracking-tight">
+                                Tu plan crece<br>
+                                <span class="gt-badge">con vos.</span>
+                            </h1>
+                            <p class="text-gray-300 text-xl leading-relaxed mb-10 max-w-lg md:mx-0 mx-auto">
+                                Growtenda ajusta tu suscripcion automaticamente segun tus ventas. Subis cuando vends mas, bajas cuando necesitas respirar. Sin tramites, sin sorpresas.
+                            </p>
+                            <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                                ${user
+                                    ? `<button id="hero-my-plan-btn" class="gt-cta-btn bg-green-500 hover:bg-green-400 text-white font-bold px-8 py-4 rounded-2xl text-lg">Ver mi plan</button>
+                                       <button id="hero-planes-btn" class="gt-secondary-btn bg-white bg-opacity-10 hover:bg-opacity-20 text-white font-semibold px-8 py-4 rounded-2xl text-lg border border-white border-opacity-20">Ver todos los planes</button>`
+                                    : `<button id="hero-trial-btn" class="gt-cta-btn bg-green-500 hover:bg-green-400 text-white font-bold px-8 py-4 rounded-2xl text-lg">Empezar gratis 30 dias</button>
+                                       <button id="hero-planes-btn" class="gt-secondary-btn bg-white bg-opacity-10 hover:bg-opacity-20 text-white font-semibold px-8 py-4 rounded-2xl text-lg border border-white border-opacity-20">Ver planes</button>`
+                                }
+                            </div>
+                            <p class="text-gray-500 text-sm mt-4">Sin tarjeta de credito para empezar</p>
+                        </div>
+                        <div class="flex-1 flex justify-center md:justify-end w-full max-w-md">
+                            <div class="w-full bg-white bg-opacity-5 border border-white border-opacity-10 rounded-3xl p-8 backdrop-blur-sm">
+                                <div class="flex items-center justify-between mb-6">
+                                    <span class="text-gray-400 text-sm font-medium">Tus ventas este mes</span>
+                                    <span class="bg-green-500 bg-opacity-20 text-green-400 text-xs font-bold px-3 py-1 rounded-full">+18%</span>
+                                </div>
+                                <div class="text-4xl font-black text-white mb-2">$648.000</div>
+                                <div class="text-gray-400 text-sm mb-8">de $800.000 del Plan Crecimiento</div>
+                                <div class="w-full bg-white bg-opacity-10 rounded-full h-3 mb-2">
+                                    <div class="bg-gradient-to-r from-green-400 to-emerald-500 h-3 rounded-full transition-all" style="width: 81%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500 mb-8">
+                                    <span>81% del limite</span>
+                                    <span>Falta $152.000</span>
+                                </div>
+                                <div class="bg-green-500 bg-opacity-10 border border-green-500 border-opacity-30 rounded-2xl p-4">
+                                    <div class="flex items-start gap-3">
+                                        <svg class="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                        <div>
+                                            <p class="text-green-300 text-sm font-semibold">Proximo upgrade automatico</p>
+                                            <p class="text-gray-400 text-xs mt-1">Si superas $800.000, pasas al Plan Pro automaticamente.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- STATS -->
+                <section class="bg-white border-b border-gray-100">
+                    <div class="max-w-5xl mx-auto px-6 py-16 grid grid-cols-2 md:grid-cols-4 gap-8">
+                        ${[
+                            { n: '+2.400', l: 'vendedores activos', icon: 'users' },
+                            { n: '99.9%', l: 'uptime garantizado', icon: 'shield' },
+                            { n: '$0', l: 'para empezar (30 dias)', icon: 'gift' },
+                            { n: '100%', l: 'automatico', icon: 'zap' },
+                        ].map(s => `
+                        <div class="gt-stat-card text-center p-4 rounded-2xl">
+                            <div class="text-3xl font-black text-gray-900 mb-1">${s.n}</div>
+                            <div class="text-gray-500 text-sm">${s.l}</div>
+                        </div>`).join('')}
+                    </div>
+                </section>
+
+                <!-- FEATURES -->
+                <section class="bg-gray-50 py-24">
+                    <div class="max-w-6xl mx-auto px-6">
+                        <div class="text-center mb-16">
+                            <h2 class="text-4xl font-black text-gray-900 mb-4">Pensado para la realidad argentina</h2>
+                            <p class="text-gray-500 text-lg max-w-2xl mx-auto">Un plan de suscripcion que entiende que los negocios no siempre son lineales.</p>
+                        </div>
+                        <div class="grid md:grid-cols-3 gap-8">
+                            ${[
+                                {
+                                    color: 'bg-blue-50', iconColor: 'text-blue-600', bgIcon: 'bg-blue-100',
+                                    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>`,
+                                    title: 'Escala automatica',
+                                    desc: 'Cuando tus ventas superan el limite de tu plan, te subimos automaticamente. Sin que tengas que hacer nada.'
+                                },
+                                {
+                                    color: 'bg-green-50', iconColor: 'text-green-600', bgIcon: 'bg-green-100',
+                                    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>`,
+                                    title: 'Baja si necesitas',
+                                    desc: 'Si el mes fue dificil y tus ventas cayeron, bajamos tu plan automaticamente para que pagues menos.'
+                                },
+                                {
+                                    color: 'bg-amber-50', iconColor: 'text-amber-600', bgIcon: 'bg-amber-100',
+                                    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>`,
+                                    title: 'Descuento por lealtad',
+                                    desc: 'Llevas meses con nosotros y tuviste un bajón? Te ofrecemos un descuento especial antes de que canceles.'
+                                },
+                                {
+                                    color: 'bg-rose-50', iconColor: 'text-rose-600', bgIcon: 'bg-rose-100',
+                                    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>`,
+                                    title: 'Metricas claras',
+                                    desc: 'Ve tu progreso mensual, cuanto te falta para el proximo tier y el historial completo de cambios de plan.'
+                                },
+                                {
+                                    color: 'bg-sky-50', iconColor: 'text-sky-600', bgIcon: 'bg-sky-100',
+                                    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>`,
+                                    title: 'MercadoPago nativo',
+                                    desc: 'Paga con la plataforma que ya conoces. Cobros automaticos, sin friccion, directo desde Argentina.'
+                                },
+                                {
+                                    color: 'bg-emerald-50', iconColor: 'text-emerald-600', bgIcon: 'bg-emerald-100',
+                                    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>`,
+                                    title: 'Actualizacion contra inflacion',
+                                    desc: 'Ajustamos precios mensualmente con aviso previo. Nada de cambios sorpresa en tu ciclo de cobro.'
+                                },
+                            ].map(f => `
+                            <div class="gt-feature-card ${f.color} rounded-2xl p-8 border border-transparent hover:border-gray-200 transition-all">
+                                <div class="${f.bgIcon} ${f.iconColor} w-12 h-12 rounded-xl flex items-center justify-center mb-4 gt-feature-icon">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">${f.icon}</svg>
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-900 mb-2">${f.title}</h3>
+                                <p class="text-gray-600 text-sm leading-relaxed">${f.desc}</p>
+                            </div>`).join('')}
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PLANES PREVIEW -->
+                <section class="bg-white py-24">
+                    <div class="max-w-4xl mx-auto px-6 text-center">
+                        <h2 class="text-4xl font-black text-gray-900 mb-4">Un plan para cada momento</h2>
+                        <p class="text-gray-500 text-lg mb-12">Empieza gratis, crece sin limites.</p>
+                        <div class="flex flex-wrap justify-center gap-3 mb-12">
+                            ${[
+                                { name: 'Prueba Gratuita', detail: 'Gratis 30 dias', color: 'bg-gray-100 text-gray-700 border-gray-200' },
+                                { name: 'Inicial', detail: 'Hasta 25 productos', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+                                { name: 'Crecimiento', detail: 'Hasta 100 productos', color: 'bg-green-50 text-green-700 border-green-200' },
+                                { name: 'Pro', detail: 'Sin limites', color: 'bg-gray-900 text-white border-gray-900' },
+                            ].map(p => `
+                            <div class="gt-plan-pill ${p.color} border px-6 py-3 rounded-2xl cursor-default">
+                                <div class="font-bold text-sm">${p.name}</div>
+                                <div class="text-xs opacity-70 mt-0.5">${p.detail}</div>
+                            </div>`).join('')}
+                        </div>
+                        <button id="hero-planes-btn-2" class="gt-cta-btn bg-gray-900 hover:bg-gray-800 text-white font-bold px-10 py-4 rounded-2xl text-lg inline-block">
+                            Ver precios completos
+                        </button>
+                    </div>
+                </section>
+
+                <!-- TESTIMONIALS -->
+                <section class="bg-gray-50 py-24">
+                    <div class="max-w-5xl mx-auto px-6">
+                        <h2 class="text-3xl font-black text-gray-900 text-center mb-12">Lo que dicen los vendedores</h2>
+                        <div class="grid md:grid-cols-3 gap-6">
+                            ${[
+                                { name: 'Lucia M.', role: 'Ropa y accesorios', quote: 'En noviembre baje dos planes por la temporada baja. Sin llamar a nadie, solo paso. Me ahorre casi $40.000 ese mes.' },
+                                { name: 'Matias G.', role: 'Electronica y tech', quote: 'El Hot Sale nos exploto. Growtenda nos subio al plan Pro justo cuando mas lo necesitabamos. No perdimos ni una venta.' },
+                                { name: 'Carla B.', role: 'Cosmética natural', quote: 'Me ofrecieron un descuento del 30% cuando estaba por cancelar. Ya llevo 8 meses con ese descuento renovado.' },
+                            ].map(t => `
+                            <div class="gt-testimonial bg-white rounded-2xl p-7 border border-gray-100">
+                                <p class="text-gray-700 text-sm leading-relaxed mb-6">"${t.quote}"</p>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm">${t.name[0]}</div>
+                                    <div>
+                                        <div class="font-semibold text-gray-900 text-sm">${t.name}</div>
+                                        <div class="text-gray-400 text-xs">${t.role}</div>
+                                    </div>
+                                </div>
+                            </div>`).join('')}
+                        </div>
+                    </div>
+                </section>
+
+                <!-- FINAL CTA -->
+                <section class="gt-hero-bg text-white py-24">
+                    <div class="max-w-3xl mx-auto px-6 text-center">
+                        <h2 class="text-4xl md:text-5xl font-black mb-6 leading-tight">
+                            Empieza hoy.<br><span class="gt-badge">Sin riesgos.</span>
+                        </h2>
+                        <p class="text-gray-300 text-xl mb-10">30 dias gratis, sin tarjeta de credito. Cancela cuando quieras.</p>
+                        ${user
+                            ? `<button id="hero-cta-my-plan-btn" class="gt-cta-btn bg-green-500 hover:bg-green-400 text-white font-bold px-10 py-4 rounded-2xl text-xl">Ver mi plan</button>`
+                            : `<button id="hero-cta-trial-btn" class="gt-cta-btn bg-green-500 hover:bg-green-400 text-white font-bold px-10 py-4 rounded-2xl text-xl">Empezar gratis</button>`
+                        }
+                    </div>
+                </section>
+
+            </div>`;
+        }
+
+        function attachHomeEvents() {
+            document.getElementById('hero-trial-btn')?.addEventListener('click', () => navigateTo('login'));
+            document.getElementById('hero-planes-btn')?.addEventListener('click', () => navigateTo('plans'));
+            document.getElementById('hero-planes-btn-2')?.addEventListener('click', () => navigateTo('plans'));
+            document.getElementById('hero-my-plan-btn')?.addEventListener('click', () => navigateTo('my-plan'));
+            document.getElementById('hero-cta-trial-btn')?.addEventListener('click', () => navigateTo('login'));
+            document.getElementById('hero-cta-my-plan-btn')?.addEventListener('click', () => navigateTo('my-plan'));
         }
 
         function renderProductListPageContent() {
