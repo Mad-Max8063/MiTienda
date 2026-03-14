@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Powered E-commerce</title>
+    <title>Growtenda</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
     <script>
@@ -54,7 +54,10 @@
         <!-- Header -->
         <header class="bg-primary text-white shadow-md">
             <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-                <h1 class="text-3xl font-bold">ElectroGadget</h1>
+                <a href="#" data-page="home" class="flex items-center gap-2 no-underline">
+                    <div id="growtenda-logo-header"></div>
+                    <span class="text-2xl font-bold tracking-tight">Growtenda</span>
+                </a>
                 <nav class="space-x-4 flex items-center">
                     <a href="#" class="hover:text-accent transition-colors" data-page="home">Home</a>
                     <a href="#" class="hover:text-accent transition-colors" data-page="products">Products</a>
@@ -80,7 +83,7 @@
 
         <!-- Footer -->
         <footer class="bg-gray-800 text-white py-8 text-center">
-            <p>&copy; <span id="current-year"></span> ElectroGadget. All rights reserved.</p>
+            <p>&copy; <span id="current-year"></span> Growtenda. All rights reserved.</p>
             <p class="mt-2">Powered by AI</p>
         </footer>
 
@@ -106,7 +109,7 @@
     <!-- Templates -->
     <template id="home-page">
         <div class="text-center">
-            <h2 class="text-4xl font-bold mb-6 text-primary">Welcome to ElectroGadget!</h2>
+            <h2 class="text-4xl font-bold mb-6 text-primary">Bienvenido a Growtenda!</h2>
             <p class="text-xl text-textLight mb-8">Discover the latest in electronic gadgets, powered by AI.</p>
             <button data-page="products"
                 class="bg-secondary text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-pink-700 transition-transform hover:scale-105 transform">Shop
@@ -332,6 +335,7 @@
         const GEMINI_API_KEY = "__app_id"; // This is a placeholder for the Gemini API Key
 
         // Supabase Plans System
+        import { renderLogo } from './src/logo.js';
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
         const SUPABASE_URL = 'https://dpfmozdorvuivfhmreit.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZm1vemRvcnZ1aXZmaG1yZWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODQyOTYsImV4cCI6MjA4OTA2MDI5Nn0.-9bZYXOytaBYR_VHdV3oJF09AurgwaolziC3WWqZehc';
@@ -1938,6 +1942,7 @@
         // Initialization
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+            renderLogo('growtenda-logo-header', 1);
             if(currentYearEl) currentYearEl.textContent = new Date().getFullYear();
 
             const firebaseInitialized = initializeFirebase(); // Initialize Firebase or mocks

@@ -4,6 +4,7 @@ import {
   getPendingLoyaltyDiscount, respondToLoyaltyDiscount, getAdminSettings,
   formatARS, getMonthName, createMercadoPagoCheckout, applyLoyaltyCoupon
 } from './plans-service.js';
+import { buildLogoSVG } from './logo.js';
 
 let _supabaseAuth = null;
 
@@ -122,6 +123,7 @@ function buildPlanCard(plan, userSub, index) {
   <div class="relative bg-white rounded-2xl border ${highlighted ? 'border-blue-500 shadow-xl shadow-blue-100' : 'border-gray-200 shadow-sm'} p-8 flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg">
     ${highlighted ? '<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full">MAS POPULAR</div>' : ''}
     <div class="mb-6">
+      <div class="mb-3">${buildLogoSVG(0.6 + index * 0.4)}</div>
       <h3 class="text-xl font-bold text-gray-900 mb-1">${plan.name}</h3>
       <p class="text-gray-500 text-sm">${plan.description}</p>
     </div>
