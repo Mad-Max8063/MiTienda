@@ -55,9 +55,10 @@
         <header class="bg-primary text-white shadow-md">
             <div class="container mx-auto px-4 py-4 flex justify-between items-center">
                 <h1 class="text-3xl font-bold">ElectroGadget</h1>
-                <nav class="space-x-4">
+                <nav class="space-x-4 flex items-center">
                     <a href="#" class="hover:text-accent transition-colors" data-page="home">Home</a>
                     <a href="#" class="hover:text-accent transition-colors" data-page="products">Products</a>
+                    <a href="#" class="hover:text-accent transition-colors" data-page="plans">Planes</a>
                     <a href="#" class="relative hover:text-accent transition-colors" data-page="cart">
                         <i data-lucide="shopping-cart"></i>
                         <span id="cart-count"
@@ -65,6 +66,8 @@
                     </a>
                     <a href="#" id="auth-link" class="hover:text-accent transition-colors" data-page="login">Login</a>
                     <a href="#" id="profile-link" class="hover:text-accent transition-colors" data-page="profile" style="display:none;">Profile</a>
+                    <a href="#" id="my-plan-link" class="hover:text-accent transition-colors text-sm" data-page="my-plan" style="display:none;">Mi Plan</a>
+                    <a href="#" id="admin-link" class="hover:text-accent transition-colors text-xs bg-white bg-opacity-20 px-2 py-1 rounded" data-page="admin" style="display:none;">Admin</a>
                     <button id="logout-button" class="hover:text-accent transition-colors" style="display:none;">Logout</button>
                 </nav>
             </div>
@@ -327,6 +330,12 @@
         // DO NOT EDIT __firebase_config or __app_id - These will be replaced by the CI/CD pipeline
         const firebaseConfig = __firebase_config;
         const GEMINI_API_KEY = "__app_id"; // This is a placeholder for the Gemini API Key
+
+        // Supabase Plans System
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        const SUPABASE_URL = 'https://dpfmozdorvuivfhmreit.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZm1vemRvcnZ1aXZmaG1yZWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODQyOTYsImV4cCI6MjA4OTA2MDI5Nn0.-9bZYXOytaBYR_VHdV3oJF09AurgwaolziC3WWqZehc';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -898,7 +907,7 @@
                 const quantity = parseInt(document.getElementById('detail-quantity').value) || 1;
                 addToCart(product.id, quantity);
             };
-            pageContent.getElementById('summarize-reviews-btn').onclick = () => callGeminiForSummary(product);
+            pageContent.getElementById('summarize-reviews-btn').onclick = () => summarizeReviews(product);
             pageContent.getElementById('ask-gemini-btn').onclick = () => askGeminiAboutProduct(product);
 
             renderPage('product-detail', pageContent);
@@ -1084,6 +1093,15 @@
                         navigateTo('login');
                     }
                     break;
+                case 'plans':
+                    renderPlansPageContent();
+                    break;
+                case 'my-plan':
+                    renderMyPlanPageContent();
+                    break;
+                case 'admin':
+                    renderAdminPageContent();
+                    break;
                 default:
                     console.warn(`Unknown page: ${pageId}. Navigating to home.`);
                     renderHomePageContent();
@@ -1157,16 +1175,26 @@
         }
 
         function updateAuthUI(user) {
+            const myPlanLinkEl = document.getElementById('my-plan-link');
+            const adminLinkEl = document.getElementById('admin-link');
             if (user) {
                 authLinkEl.style.display = 'none';
                 profileLinkEl.style.display = 'inline-block';
                 logoutButtonEl.style.display = 'inline-block';
+                if (myPlanLinkEl) myPlanLinkEl.style.display = 'inline-block';
+                // Show admin link for admin users
+                if (adminLinkEl) {
+                    const isAdmin = user.email && user.email.includes('+admin@') || (user.email && user.email.startsWith('admin@'));
+                    adminLinkEl.style.display = isAdmin ? 'inline-block' : 'none';
+                }
             } else {
                 authLinkEl.style.display = 'inline-block';
                 authLinkEl.dataset.page = 'login'; // ensure it points to login
                 authLinkEl.textContent = 'Login';
                 profileLinkEl.style.display = 'none';
                 logoutButtonEl.style.display = 'none';
+                if (myPlanLinkEl) myPlanLinkEl.style.display = 'none';
+                if (adminLinkEl) adminLinkEl.style.display = 'none';
             }
         }
 
@@ -1312,6 +1340,601 @@
         }
 
 
+        // =============================================
+        // PLANS SYSTEM - Supabase Integration
+        // =============================================
+
+        function formatARS(cents) {
+            return new Intl.NumberFormat('es-AR', {
+                style: 'currency', currency: 'ARS', minimumFractionDigits: 0
+            }).format(cents);
+        }
+
+        function getMonthNameShort(month) {
+            const names = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            return names[month - 1] || '';
+        }
+
+        async function plansGetPlans() {
+            const { data, error } = await supabase.from('plans').select('*').eq('is_active', true).order('hierarchy_order');
+            if (error) throw error;
+            return data;
+        }
+
+        async function plansGetUserSubscription(userId) {
+            const { data, error } = await supabase.from('user_subscriptions').select('*, plan:plans(*)').eq('user_id', userId).maybeSingle();
+            if (error) throw error;
+            return data;
+        }
+
+        async function plansCreateSubscription(userId, planId, isTrial) {
+            const trialEndsAt = isTrial ? new Date(Date.now() + 30*24*60*60*1000).toISOString() : null;
+            const { data, error } = await supabase.from('user_subscriptions').insert({
+                user_id: userId, plan_id: planId,
+                status: isTrial ? 'trial' : 'active',
+                trial_ends_at: trialEndsAt,
+                current_period_start: new Date().toISOString(),
+                current_period_end: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+            }).select('*, plan:plans(*)').single();
+            if (error) throw error;
+            return data;
+        }
+
+        async function plansUpdateAutoScale(userId, enabled) {
+            const { error } = await supabase.from('user_subscriptions').update({ auto_scale_enabled: enabled, updated_at: new Date().toISOString() }).eq('user_id', userId);
+            if (error) throw error;
+        }
+
+        async function plansGetMetrics(userId) {
+            const { data, error } = await supabase.from('monthly_sales_metrics').select('*').eq('user_id', userId).order('year', { ascending: false }).order('month', { ascending: false }).limit(6);
+            if (error) throw error;
+            return data || [];
+        }
+
+        async function plansGetChangeLog(userId) {
+            const { data, error } = await supabase.from('plan_change_log')
+                .select('*, previous_plan:plans!plan_change_log_previous_plan_id_fkey(name), new_plan:plans!plan_change_log_new_plan_id_fkey(name)')
+                .eq('user_id', userId).order('created_at', { ascending: false }).limit(10);
+            if (error) throw error;
+            return data || [];
+        }
+
+        async function plansGetPendingDiscount(userId) {
+            const { data, error } = await supabase.from('loyalty_discounts').select('*, plan:plans(name)').eq('user_id', userId).eq('status', 'pending').maybeSingle();
+            if (error) throw error;
+            return data;
+        }
+
+        async function plansRespondDiscount(discountId, accept) {
+            const { error } = await supabase.from('loyalty_discounts').update({
+                status: accept ? 'accepted' : 'rejected',
+                accepted_at: accept ? new Date().toISOString() : null,
+                updated_at: new Date().toISOString()
+            }).eq('id', discountId);
+            if (error) throw error;
+        }
+
+        async function plansGetAdminSettings() {
+            const { data, error } = await supabase.from('admin_settings').select('*').limit(1).maybeSingle();
+            if (error) throw error;
+            return data;
+        }
+
+        async function plansUpdateSettings(settings) {
+            const { error } = await supabase.from('admin_settings').update({ ...settings, updated_at: new Date().toISOString() }).neq('id', '00000000-0000-0000-0000-000000000000');
+            if (error) throw error;
+        }
+
+        async function plansApplyInflation(planId, newPrice, prevPrice, pct, adminId, notes) {
+            const { error: e1 } = await supabase.from('plans').update({ price_ars: newPrice, updated_at: new Date().toISOString() }).eq('id', planId);
+            if (e1) throw e1;
+            const { error: e2 } = await supabase.from('plan_prices_history').insert({ plan_id: planId, previous_price_ars: prevPrice, new_price_ars: newPrice, inflation_percentage: pct, applied_by: adminId, notes });
+            if (e2) throw e2;
+        }
+
+        async function plansGetPriceHistory() {
+            const { data, error } = await supabase.from('plan_prices_history').select('*, plan:plans(name,slug)').order('applied_at', { ascending: false }).limit(30);
+            if (error) throw error;
+            return data || [];
+        }
+
+        async function plansGetAllSubs() {
+            const { data, error } = await supabase.from('user_subscriptions').select('*, plan:plans(name)').order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        }
+
+        async function plansCreateLoyaltyDiscount(userId, planId, pct, duration, message) {
+            const validUntil = new Date();
+            validUntil.setMonth(validUntil.getMonth() + 7);
+            const { error } = await supabase.from('loyalty_discounts').insert({
+                user_id: userId, plan_id: planId, discount_percentage: pct,
+                discount_duration_months: duration, valid_until: validUntil.toISOString(),
+                status: 'pending', trigger_reason: 'manual_admin',
+                message: message || `Descuento especial del ${pct}% por ${duration} meses`
+            });
+            if (error) throw error;
+        }
+
+        // ---- RENDER PLANS PAGE ----
+        async function renderPlansPageContent() {
+            clearMainContent();
+            mainContentEl.innerHTML = `<div class="flex items-center justify-center py-16"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div></div>`;
+            mainContentEl.dataset.currentPage = 'plans';
+            try {
+                const plans = await plansGetPlans();
+                const user = auth && auth.currentUser;
+                let userSub = null;
+                if (user) userSub = await plansGetUserSubscription(user.uid);
+                mainContentEl.innerHTML = buildPlansHTML(plans, userSub, user);
+                attachPlansEvents(plans, userSub, user);
+            } catch (e) {
+                mainContentEl.innerHTML = `<p class="text-red-500 text-center py-8">Error cargando planes: ${e.message}</p>`;
+            }
+        }
+
+        function buildPlansHTML(plans, userSub, user) {
+            const trialPlan = plans.find(p => p.is_free_trial);
+            const paidPlans = plans.filter(p => !p.is_free_trial);
+            const trialBanner = !userSub && trialPlan ? `
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white text-center mb-10">
+                <h3 class="text-2xl font-bold mb-2">30 dias gratis, sin tarjeta</h3>
+                <p class="text-blue-100 mb-6">Empeza a vender hoy. No necesitas dar datos de pago para probar todo.</p>
+                <button id="start-trial-btn" data-plan-id="${trialPlan.id}" class="bg-white text-blue-700 font-bold px-8 py-3 rounded-xl hover:bg-blue-50 transition-colors">Comenzar prueba gratuita</button>
+            </div>` : userSub ? `
+            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 flex items-center justify-between flex-wrap gap-4 mb-10">
+                <div>
+                    <p class="text-sm text-blue-600 font-medium mb-1">Tu plan actual</p>
+                    <span class="text-2xl font-bold text-gray-900">${userSub.plan?.name || 'Plan'}</span>
+                </div>
+                <button id="go-my-plan-btn" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">Ver mi plan</button>
+            </div>` : '';
+
+            const planCards = paidPlans.map((plan, i) => {
+                const isCurrentPlan = userSub?.plan_id === plan.id;
+                const highlighted = i === 1;
+                const features = Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || '[]');
+                return `
+                <div class="relative bg-white rounded-2xl border ${highlighted ? 'border-blue-500 shadow-xl shadow-blue-100' : 'border-gray-200 shadow-sm'} p-8 flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg">
+                    ${highlighted ? '<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full tracking-wider">MAS POPULAR</div>' : ''}
+                    <h3 class="text-xl font-bold text-gray-900 mb-1">${plan.name}</h3>
+                    <p class="text-gray-500 text-sm mb-4">${plan.description}</p>
+                    <div class="mb-6"><span class="text-4xl font-bold text-gray-900">${formatARS(plan.price_ars)}</span><span class="text-gray-400 text-sm">/mes</span></div>
+                    <ul class="space-y-3 flex-grow mb-8">
+                        ${features.map(f => `<li class="flex items-center gap-2 text-sm text-gray-700"><svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>${f}</li>`).join('')}
+                    </ul>
+                    <button data-select-plan="${plan.id}" class="${isCurrentPlan ? 'bg-gray-100 text-gray-400 cursor-default' : highlighted ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-900 text-white hover:bg-gray-800'} w-full py-3 rounded-xl font-semibold transition-colors text-sm" ${isCurrentPlan ? 'disabled' : ''}>
+                        ${isCurrentPlan ? 'Plan actual' : 'Seleccionar plan'}
+                    </button>
+                </div>`;
+            }).join('');
+
+            return `
+            <div class="max-w-5xl mx-auto px-4 py-10">
+                <div class="text-center mb-12">
+                    <span class="inline-block bg-blue-100 text-blue-700 text-sm font-semibold px-4 py-1 rounded-full mb-4 tracking-wide uppercase">Planes y Precios</span>
+                    <h2 class="text-4xl font-bold text-gray-900 mb-4">Si vos crecés, nosotros también</h2>
+                    <p class="text-lg text-gray-500 max-w-2xl mx-auto">Tu plan se adapta automáticamente a tus ventas. Cuando vendés más, subís. Cuando las cosas se complican, bajamos para que pagues menos.</p>
+                </div>
+                ${trialBanner}
+                <div class="grid md:grid-cols-3 gap-8">${planCards}</div>
+                <div class="mt-16 grid md:grid-cols-3 gap-6">
+                    <div class="text-center p-6 bg-white rounded-2xl border border-gray-100">
+                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3"><svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg></div>
+                        <h3 class="font-bold text-gray-900 mb-2">Escalado automatico</h3>
+                        <p class="text-gray-500 text-sm">Sube de plan cuando tus ventas crecen, sin que tengas que hacer nada.</p>
+                    </div>
+                    <div class="text-center p-6 bg-white rounded-2xl border border-gray-100">
+                        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3"><svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+                        <h3 class="font-bold text-gray-900 mb-2">Baja automatica</h3>
+                        <p class="text-gray-500 text-sm">Si las ventas caen, bajamos tu plan para que pagues menos sin trámites.</p>
+                    </div>
+                    <div class="text-center p-6 bg-white rounded-2xl border border-gray-100">
+                        <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mx-auto mb-3"><svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
+                        <h3 class="font-bold text-gray-900 mb-2">Descuento por lealtad</h3>
+                        <p class="text-gray-500 text-sm">Si llevas tiempo con nosotros y tenes un mal mes, te ofrecemos un descuento especial.</p>
+                    </div>
+                </div>
+                <div class="mt-10 bg-gray-50 rounded-2xl p-7 text-center">
+                    <h3 class="font-bold text-gray-900 mb-2">Precios actualizados contra la inflacion</h3>
+                    <p class="text-gray-500 text-sm max-w-xl mx-auto">Ajustamos los precios mensualmente para mantenernos actualizados. Te avisamos antes de cualquier cambio en tu ciclo de cobro.</p>
+                </div>
+            </div>`;
+        }
+
+        function attachPlansEvents(plans, userSub, user) {
+            document.getElementById('start-trial-btn')?.addEventListener('click', async (e) => {
+                if (!user) { navigateTo('login'); return; }
+                const planId = e.target.dataset.planId;
+                e.target.disabled = true; e.target.textContent = 'Procesando...';
+                try {
+                    await plansCreateSubscription(user.uid, planId, true);
+                    navigateTo('my-plan');
+                } catch (err) {
+                    e.target.disabled = false; e.target.textContent = 'Comenzar prueba gratuita';
+                    showMessage('Error', err.message, true);
+                }
+            });
+            document.getElementById('go-my-plan-btn')?.addEventListener('click', () => navigateTo('my-plan'));
+            document.querySelectorAll('[data-select-plan]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (!user) { navigateTo('login'); return; }
+                    showMessage('Seleccion de plan', 'Para cambiar tu plan, conecta Stripe desde el panel de administracion o contacta soporte.');
+                });
+            });
+        }
+
+        // ---- RENDER MY PLAN PAGE ----
+        async function renderMyPlanPageContent() {
+            const user = auth && auth.currentUser;
+            clearMainContent();
+            mainContentEl.dataset.currentPage = 'my-plan';
+            if (!user) {
+                mainContentEl.innerHTML = `<div class="max-w-md mx-auto mt-16 text-center"><p class="text-gray-500 mb-4">Necesitas iniciar sesion para ver tu plan.</p><button data-page="login" class="bg-blue-600 text-white px-6 py-2 rounded-xl">Iniciar sesion</button></div>`;
+                return;
+            }
+            mainContentEl.innerHTML = `<div class="flex items-center justify-center py-16"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div></div>`;
+            try {
+                const [userSub, plans, metrics, changeLog, pendingDiscount, settings] = await Promise.all([
+                    plansGetUserSubscription(user.uid),
+                    plansGetPlans(),
+                    plansGetMetrics(user.uid),
+                    plansGetChangeLog(user.uid),
+                    plansGetPendingDiscount(user.uid),
+                    plansGetAdminSettings()
+                ]);
+                if (!userSub) {
+                    mainContentEl.innerHTML = `<div class="max-w-lg mx-auto mt-16 text-center"><div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6"><svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></div><h2 class="text-2xl font-bold text-gray-900 mb-3">No tenes un plan activo</h2><p class="text-gray-500 mb-8">Elegí un plan para empezar. Tenes 30 dias gratis sin compromisos.</p><button id="go-plans-btn-noplan" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">Ver planes disponibles</button></div>`;
+                    document.getElementById('go-plans-btn-noplan')?.addEventListener('click', () => navigateTo('plans'));
+                    return;
+                }
+                mainContentEl.innerHTML = buildMyPlanHTML(userSub, plans, metrics, changeLog, pendingDiscount, settings);
+                attachMyPlanEvents(userSub, user, pendingDiscount);
+            } catch (e) {
+                mainContentEl.innerHTML = `<p class="text-red-500 text-center py-8">Error: ${e.message}</p>`;
+            }
+        }
+
+        function buildMyPlanHTML(userSub, plans, metrics, changeLog, pendingDiscount, settings) {
+            const currentPlan = userSub.plan;
+            const nextPlan = plans.find(p => p.hierarchy_order === (currentPlan?.hierarchy_order || 0) + 1);
+            const now = new Date();
+            const currentMetrics = metrics.find(m => m.year === now.getFullYear() && m.month === now.getMonth() + 1);
+            const salesAmount = currentMetrics?.total_amount || 0;
+            const maxSales = currentPlan?.max_monthly_sales_amount || 1;
+            const salesPct = Math.min(100, Math.round((salesAmount / maxSales) * 100));
+            const warningThreshold = settings?.warning_threshold_percentage || 80;
+            const daysLeft = userSub.trial_ends_at ? Math.max(0, Math.ceil((new Date(userSub.trial_ends_at) - Date.now()) / 86400000)) : null;
+
+            const statusBadge = {
+                trial: `<span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">PRUEBA${daysLeft !== null ? ` · ${daysLeft} dias` : ''}</span>`,
+                active: `<span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">ACTIVO</span>`,
+                loyalty_discount: `<span class="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full">DESCUENTO LEALTAD</span>`,
+                at_risk: `<span class="bg-red-100 text-red-700 text-xs font-bold px-3 py-1 rounded-full">NECESITA ATENCION</span>`,
+            }[userSub.status] || '';
+
+            const progressColor = salesPct >= 100 ? 'bg-green-500' : salesPct >= warningThreshold ? 'bg-amber-500' : 'bg-blue-500';
+
+            const discountBanner = pendingDiscount ? `
+            <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-6 mb-6">
+                <div class="flex items-start gap-4 flex-wrap">
+                    <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                    </div>
+                    <div class="flex-grow">
+                        <h3 class="font-bold text-amber-900 text-lg mb-1">Tenes un descuento especial disponible</h3>
+                        <p class="text-amber-700 text-sm mb-3">${pendingDiscount.message || `Te ofrecemos un ${pendingDiscount.discount_percentage}% de descuento durante ${pendingDiscount.discount_duration_months} meses en el plan ${pendingDiscount.plan?.name}.`}</p>
+                        <div class="flex gap-3">
+                            <button id="accept-discount-btn" data-discount-id="${pendingDiscount.id}" class="bg-amber-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-amber-700 transition-colors">Aceptar descuento</button>
+                            <button id="reject-discount-btn" data-discount-id="${pendingDiscount.id}" class="text-amber-600 px-5 py-2 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors">No gracias</button>
+                        </div>
+                    </div>
+                </div>
+            </div>` : '';
+
+            const chartHtml = metrics.length > 0 ? (() => {
+                const maxAmt = Math.max(...metrics.map(m => m.total_amount), 1);
+                const sorted = [...metrics].sort((a,b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
+                return `<div class="flex items-end gap-2 h-28">${sorted.map(m => {
+                    const pct = Math.max(4, Math.round((m.total_amount / maxAmt) * 100));
+                    return `<div class="flex flex-col items-center flex-1 gap-1"><span class="text-xs text-gray-400 truncate w-full text-center" style="font-size:10px">${formatARS(m.total_amount).replace('AR$','$')}</span><div class="w-full bg-blue-500 rounded-t" style="height:${pct}%"></div><span class="text-xs text-gray-500">${getMonthNameShort(m.month)}</span></div>`;
+                }).join('')}</div>`;
+            })() : '<p class="text-gray-400 text-sm">Sin datos de ventas todavia.</p>';
+
+            const changeLogHtml = changeLog.length > 0 ? `
+            <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mt-6">
+                <h3 class="font-bold text-gray-900 mb-4">Historial de cambios</h3>
+                <div class="space-y-3">
+                ${changeLog.map(c => {
+                    const info = { auto_upgrade: ['↑','bg-green-100 text-green-700','Subida automatica'], auto_downgrade: ['↓','bg-blue-100 text-blue-700','Bajada automatica'], loyalty_discount: ['♥','bg-amber-100 text-amber-700','Descuento de lealtad'], manual_admin: ['✎','bg-gray-100 text-gray-600','Cambio manual'], initial_subscription: ['★','bg-blue-100 text-blue-700','Suscripcion inicial'] }[c.change_reason] || ['•','bg-gray-100 text-gray-600', c.change_reason];
+                    const date = new Date(c.created_at).toLocaleDateString('es-AR', { day:'numeric', month:'short', year:'numeric' });
+                    return `<div class="flex items-center gap-3"><div class="w-8 h-8 ${info[1]} rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">${info[0]}</div><div class="flex-grow"><p class="text-sm font-medium text-gray-900">${info[2]}</p><p class="text-xs text-gray-400">${c.previous_plan?.name ? c.previous_plan.name + ' → ' : ''}${c.new_plan?.name || ''}</p></div><span class="text-xs text-gray-400">${date}</span></div>`;
+                }).join('')}
+                </div>
+            </div>` : '';
+
+            return `
+            <div class="max-w-4xl mx-auto px-4 py-10">
+                <h2 class="text-3xl font-bold text-gray-900 mb-8">Mi Plan</h2>
+                ${discountBanner}
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-gray-900">Plan actual</h3>
+                            ${statusBadge}
+                        </div>
+                        <p class="text-3xl font-bold text-gray-900 mb-1">${currentPlan?.name || 'Sin plan'}</p>
+                        <p class="text-gray-500 text-sm mb-4">${formatARS(currentPlan?.price_ars || 0)}/mes</p>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-gray-500">Escalado automatico</span>
+                            <button id="toggle-autoscale-btn" data-enabled="${userSub.auto_scale_enabled}" role="switch"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${userSub.auto_scale_enabled ? 'bg-blue-600' : 'bg-gray-200'}">
+                                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${userSub.auto_scale_enabled ? 'translate-x-6' : 'translate-x-1'}"></span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                        <h3 class="font-bold text-gray-900 mb-4">Ventas este mes</h3>
+                        <p class="text-3xl font-bold text-gray-900 mb-1">${formatARS(salesAmount)}</p>
+                        <p class="text-gray-500 text-sm mb-3">de ${formatARS(maxSales)} del limite</p>
+                        <div class="w-full bg-gray-100 rounded-full h-3 mb-2">
+                            <div class="${progressColor} h-3 rounded-full transition-all" style="width:${salesPct}%"></div>
+                        </div>
+                        <p class="text-xs text-gray-400">${salesPct}% del limite del plan</p>
+                        ${salesPct >= warningThreshold && salesPct < 100 ? '<p class="mt-2 text-xs text-amber-600 font-medium">Estas cerca del limite. Si seguís creciendo, subiremos tu plan automaticamente.</p>' : ''}
+                        ${salesPct >= 100 ? '<p class="mt-2 text-xs text-green-600 font-medium">Superaste el limite. Subiras de nivel en el proximo ciclo.</p>' : ''}
+                    </div>
+                </div>
+                ${nextPlan && salesPct >= 60 ? `<div class="bg-green-50 border border-green-200 rounded-2xl p-5 mb-6 flex items-center justify-between flex-wrap gap-3"><div><p class="font-semibold text-green-800 mb-1">Siguiente nivel: ${nextPlan.name}</p><p class="text-green-600 text-sm">Con ${formatARS(nextPlan.min_monthly_sales_amount)}/mes en ventas, subirás automáticamente.</p></div><span class="text-green-700 font-semibold text-sm">${formatARS(nextPlan.price_ars)}/mes</span></div>` : ''}
+                <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                    <h3 class="font-bold text-gray-900 mb-4">Historial de ventas</h3>
+                    ${chartHtml}
+                </div>
+                ${changeLogHtml}
+            </div>`;
+        }
+
+        function attachMyPlanEvents(userSub, user, pendingDiscount) {
+            document.getElementById('toggle-autoscale-btn')?.addEventListener('click', async (e) => {
+                const currentEnabled = e.currentTarget.dataset.enabled === 'true';
+                const newEnabled = !currentEnabled;
+                try {
+                    await plansUpdateAutoScale(user.uid, newEnabled);
+                    e.currentTarget.dataset.enabled = String(newEnabled);
+                    e.currentTarget.className = `relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${newEnabled ? 'bg-blue-600' : 'bg-gray-200'}`;
+                    e.currentTarget.querySelector('span').className = `inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${newEnabled ? 'translate-x-6' : 'translate-x-1'}`;
+                } catch (err) { showMessage('Error', err.message, true); }
+            });
+            document.getElementById('accept-discount-btn')?.addEventListener('click', async (e) => {
+                const discountId = e.target.dataset.discountId;
+                e.target.disabled = true;
+                try {
+                    await plansRespondDiscount(discountId, true);
+                    const banner = e.target.closest('.bg-amber-50');
+                    if (banner) banner.innerHTML = '<p class="text-green-700 font-semibold text-center py-2">Descuento aplicado. Se verá reflejado en tu próximo cobro.</p>';
+                } catch (err) { e.target.disabled = false; showMessage('Error', err.message, true); }
+            });
+            document.getElementById('reject-discount-btn')?.addEventListener('click', async (e) => {
+                const discountId = e.target.dataset.discountId;
+                e.target.disabled = true;
+                try {
+                    await plansRespondDiscount(discountId, false);
+                    const banner = e.target.closest('.bg-amber-50');
+                    if (banner) banner.innerHTML = '<p class="text-gray-500 text-center py-2">Descuento rechazado. Seguimos con vos.</p>';
+                } catch (err) { e.target.disabled = false; showMessage('Error', err.message, true); }
+            });
+        }
+
+        // ---- RENDER ADMIN PAGE ----
+        async function renderAdminPageContent() {
+            const user = auth && auth.currentUser;
+            clearMainContent();
+            mainContentEl.dataset.currentPage = 'admin';
+            if (!user) { mainContentEl.innerHTML = '<p class="text-center py-8 text-gray-500">Acceso restringido.</p>'; return; }
+            mainContentEl.innerHTML = `<div class="flex items-center justify-center py-16"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div></div>`;
+            try {
+                const [plans, settings, history, subscriptions] = await Promise.all([
+                    plansGetPlans(), plansGetAdminSettings(), plansGetPriceHistory(), plansGetAllSubs()
+                ]);
+                mainContentEl.innerHTML = buildAdminHTML(plans, settings, history, subscriptions);
+                attachAdminEvents(plans, settings, user);
+            } catch (e) {
+                mainContentEl.innerHTML = `<p class="text-red-500 text-center py-8">Error: ${e.message}</p>`;
+            }
+        }
+
+        function buildAdminHTML(plans, settings, history, subscriptions) {
+            const paidPlans = plans.filter(p => !p.is_free_trial);
+            const statusCounts = subscriptions.reduce((acc, s) => { acc[s.status] = (acc[s.status] || 0) + 1; return acc; }, {});
+
+            const historyRows = history.length > 0 ? history.map(h => `
+                <tr>
+                    <td class="py-3 pr-4 font-medium text-gray-900">${h.plan?.name || 'Plan'}</td>
+                    <td class="py-3 pr-4 text-gray-400">${formatARS(h.previous_price_ars)}</td>
+                    <td class="py-3 pr-4 text-green-700 font-semibold">${formatARS(h.new_price_ars)}</td>
+                    <td class="py-3 pr-4"><span class="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">+${h.inflation_percentage}%</span></td>
+                    <td class="py-3 text-gray-400 text-xs">${new Date(h.applied_at).toLocaleDateString('es-AR', {day:'numeric',month:'short',year:'numeric'})}</td>
+                </tr>`).join('') : '<tr><td colspan="5" class="py-4 text-gray-400 text-sm text-center">Sin ajustes registrados todavia.</td></tr>';
+
+            const subsRows = subscriptions.length > 0 ? subscriptions.map(s => {
+                const stInfo = { trial: ['Prueba','bg-blue-100 text-blue-700'], active: ['Activo','bg-green-100 text-green-700'], loyalty_discount: ['Descuento','bg-amber-100 text-amber-700'], at_risk: ['En riesgo','bg-red-100 text-red-700'], cancelled: ['Cancelado','bg-gray-100 text-gray-500'] }[s.status] || [s.status, 'bg-gray-100 text-gray-500'];
+                return `<tr>
+                    <td class="py-3 pr-4 font-mono text-xs text-gray-400">${s.user_id.substring(0,10)}...</td>
+                    <td class="py-3 pr-4 font-medium text-gray-900 text-sm">${s.plan?.name || '-'}</td>
+                    <td class="py-3 pr-4"><span class="text-xs font-bold px-2 py-0.5 rounded-full ${stInfo[1]}">${stInfo[0]}</span></td>
+                    <td class="py-3 pr-4 text-xs ${s.auto_scale_enabled ? 'text-green-600' : 'text-gray-400'} font-semibold">${s.auto_scale_enabled ? 'Activo' : 'Inactivo'}</td>
+                    <td class="py-3"><button data-send-discount="${s.user_id}" data-plan-id="${s.plan_id}" class="text-xs text-amber-600 hover:underline font-semibold">Enviar descuento</button></td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="5" class="py-4 text-gray-400 text-sm text-center">Sin suscriptores todavia.</td></tr>';
+
+            return `
+            <div class="max-w-5xl mx-auto px-4 py-10">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900">Panel de Administracion</h2>
+                    <span class="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">Admin</span>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm"><p class="text-xs text-gray-400 uppercase font-semibold mb-1">Total subs</p><p class="text-3xl font-bold text-gray-900">${subscriptions.length}</p></div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm"><p class="text-xs text-gray-400 uppercase font-semibold mb-1">Activos</p><p class="text-3xl font-bold text-green-600">${statusCounts.active || 0}</p></div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm"><p class="text-xs text-gray-400 uppercase font-semibold mb-1">En prueba</p><p class="text-3xl font-bold text-blue-600">${statusCounts.trial || 0}</p></div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm"><p class="text-xs text-gray-400 uppercase font-semibold mb-1">Inflacion config.</p><p class="text-3xl font-bold text-amber-600">${settings?.monthly_inflation_percentage || 5}%</p></div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                        <h3 class="font-bold text-gray-900 mb-1">Ajuste por inflacion</h3>
+                        <p class="text-gray-500 text-sm mb-4">Aplica el aumento mensual a todos los planes sin tocar Stripe.</p>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Porcentaje de ajuste</label>
+                        <div class="flex gap-2 items-center mb-4">
+                            <input type="number" id="inflation-pct" value="${settings?.monthly_inflation_percentage || 5}" min="0.1" max="200" step="0.1" class="border border-gray-300 rounded-lg px-3 py-2 w-24 text-center font-semibold focus:ring-2 focus:ring-blue-500 outline-none"/>
+                            <span class="text-gray-500 text-sm">% de aumento</span>
+                        </div>
+                        <div class="space-y-2 mb-4">
+                            ${paidPlans.map(p => `<div class="flex justify-between items-center text-sm"><span class="text-gray-600">${p.name}</span><div class="flex items-center gap-2"><span class="text-gray-400">${formatARS(p.price_ars)}</span><span class="text-gray-300">→</span><span class="font-semibold text-green-700 preview-new-price" data-plan-id="${p.id}" data-current="${p.price_ars}">${formatARS(Math.round(p.price_ars * (1 + (settings?.monthly_inflation_percentage || 5)/100)))}</span></div></div>`).join('')}
+                        </div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nota interna (opcional)</label>
+                        <input type="text" id="inflation-notes" placeholder="Ej: Ajuste IPC Marzo 2025" class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm mb-4 focus:ring-2 focus:ring-blue-500 outline-none"/>
+                        <button id="apply-inflation-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors text-sm">Aplicar ajuste de precios</button>
+                    </div>
+                    <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                        <h3 class="font-bold text-gray-900 mb-1">Configuracion del sistema</h3>
+                        <p class="text-gray-500 text-sm mb-4">Parametros de escalado y descuentos de lealtad.</p>
+                        <form id="admin-settings-form" class="space-y-3">
+                            <div><label class="block text-xs font-medium text-gray-700 mb-1">Meses para bajar de plan</label><input type="number" name="months_to_downgrade" value="${settings?.months_to_downgrade || 1}" min="1" max="12" class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"/></div>
+                            <div><label class="block text-xs font-medium text-gray-700 mb-1">Meses para descuento de lealtad</label><input type="number" name="loyalty_months_threshold" value="${settings?.loyalty_months_threshold || 6}" min="1" max="36" class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"/></div>
+                            <div><label class="block text-xs font-medium text-gray-700 mb-1">Descuento de lealtad (%)</label><input type="number" name="loyalty_discount_percentage" value="${settings?.loyalty_discount_percentage || 30}" min="5" max="70" class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"/></div>
+                            <div><label class="block text-xs font-medium text-gray-700 mb-1">Duracion del descuento (meses)</label><input type="number" name="loyalty_discount_duration_months" value="${settings?.loyalty_discount_duration_months || 3}" min="1" max="12" class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"/></div>
+                            <div><label class="block text-xs font-medium text-gray-700 mb-1">Alerta de limite (%)</label><input type="number" name="warning_threshold_percentage" value="${settings?.warning_threshold_percentage || 80}" min="50" max="99" class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"/></div>
+                            <button type="submit" class="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors text-sm">Guardar configuracion</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-8">
+                    <h3 class="font-bold text-gray-900 mb-4">Historial de ajustes de precios</h3>
+                    <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-xs text-gray-400 uppercase border-b border-gray-100"><th class="pb-3 pr-4">Plan</th><th class="pb-3 pr-4">Anterior</th><th class="pb-3 pr-4">Nuevo</th><th class="pb-3 pr-4">Ajuste</th><th class="pb-3">Fecha</th></tr></thead><tbody class="divide-y divide-gray-50">${historyRows}</tbody></table></div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                    <h3 class="font-bold text-gray-900 mb-4">Suscriptores</h3>
+                    <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-xs text-gray-400 uppercase border-b border-gray-100"><th class="pb-3 pr-4">Usuario</th><th class="pb-3 pr-4">Plan</th><th class="pb-3 pr-4">Estado</th><th class="pb-3 pr-4">Escalado</th><th class="pb-3">Acciones</th></tr></thead><tbody class="divide-y divide-gray-50">${subsRows}</tbody></table></div>
+                </div>
+
+                <div id="discount-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+                        <h3 class="text-xl font-bold text-gray-900 mb-5">Enviar descuento de lealtad</h3>
+                        <form id="discount-form" class="space-y-4">
+                            <input type="hidden" id="discount-target-user"/>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Plan al que aplica</label>
+                            <select id="discount-plan-select" class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                ${paidPlans.map(p => `<option value="${p.id}">${p.name} - ${formatARS(p.price_ars)}/mes</option>`).join('')}
+                            </select></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Descuento (%)</label><input type="number" id="discount-pct-input" value="30" min="5" max="70" class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"/></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Duracion (meses)</label><input type="number" id="discount-duration-input" value="3" min="1" max="12" class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"/></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Mensaje para el usuario</label><textarea id="discount-message-input" rows="2" placeholder="Mensaje personalizado..." class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea></div>
+                            <div class="flex gap-3">
+                                <button type="submit" class="flex-1 bg-amber-600 text-white py-2 rounded-xl font-semibold hover:bg-amber-700 transition-colors text-sm">Enviar</button>
+                                <button type="button" id="close-discount-modal" class="flex-1 bg-gray-100 text-gray-700 py-2 rounded-xl font-semibold hover:bg-gray-200 transition-colors text-sm">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function attachAdminEvents(plans, settings, user) {
+            document.getElementById('inflation-pct')?.addEventListener('input', (e) => {
+                const pct = parseFloat(e.target.value) || 0;
+                document.querySelectorAll('.preview-new-price').forEach(el => {
+                    const current = parseInt(el.dataset.current) || 0;
+                    el.textContent = formatARS(Math.round(current * (1 + pct/100)));
+                });
+            });
+
+            document.getElementById('apply-inflation-btn')?.addEventListener('click', async () => {
+                const pct = parseFloat(document.getElementById('inflation-pct')?.value || '5');
+                const notes = document.getElementById('inflation-notes')?.value || '';
+                const paidPlans = plans.filter(p => !p.is_free_trial);
+                if (isNaN(pct) || pct <= 0) { showMessage('Error', 'Ingresa un porcentaje valido.', true); return; }
+                if (!confirm(`Confirmas aplicar un ajuste del ${pct}% a ${paidPlans.length} planes?`)) return;
+                const btn = document.getElementById('apply-inflation-btn');
+                btn.disabled = true; btn.textContent = 'Aplicando...';
+                try {
+                    for (const plan of paidPlans) {
+                        const newPrice = Math.round(plan.price_ars * (1 + pct/100));
+                        await plansApplyInflation(plan.id, newPrice, plan.price_ars, pct, user.uid, notes);
+                    }
+                    showMessage('Precios actualizados', `Se aplicó el ajuste del ${pct}% a todos los planes. Los cambios se sincronizarán con Stripe automáticamente.`);
+                    setTimeout(() => navigateTo('admin'), 1500);
+                } catch (err) {
+                    btn.disabled = false; btn.textContent = 'Aplicar ajuste de precios';
+                    showMessage('Error', err.message, true);
+                }
+            });
+
+            document.getElementById('admin-settings-form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const newSettings = {
+                    months_to_downgrade: parseInt(fd.get('months_to_downgrade')),
+                    loyalty_months_threshold: parseInt(fd.get('loyalty_months_threshold')),
+                    loyalty_discount_percentage: parseInt(fd.get('loyalty_discount_percentage')),
+                    loyalty_discount_duration_months: parseInt(fd.get('loyalty_discount_duration_months')),
+                    warning_threshold_percentage: parseInt(fd.get('warning_threshold_percentage')),
+                };
+                const btn = e.target.querySelector('[type="submit"]');
+                btn.disabled = true; btn.textContent = 'Guardando...';
+                try {
+                    await plansUpdateSettings(newSettings);
+                    btn.textContent = 'Guardado!';
+                    setTimeout(() => { btn.disabled = false; btn.textContent = 'Guardar configuracion'; }, 2000);
+                } catch (err) {
+                    btn.disabled = false; btn.textContent = 'Guardar configuracion';
+                    showMessage('Error', err.message, true);
+                }
+            });
+
+            document.querySelectorAll('[data-send-discount]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const modal = document.getElementById('discount-modal');
+                    const userInput = document.getElementById('discount-target-user');
+                    const planSelect = document.getElementById('discount-plan-select');
+                    if (modal && userInput) {
+                        userInput.value = btn.dataset.sendDiscount;
+                        if (planSelect && btn.dataset.planId) planSelect.value = btn.dataset.planId;
+                        modal.classList.remove('hidden');
+                    }
+                });
+            });
+
+            document.getElementById('close-discount-modal')?.addEventListener('click', () => {
+                document.getElementById('discount-modal')?.classList.add('hidden');
+            });
+
+            document.getElementById('discount-form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const userId = document.getElementById('discount-target-user')?.value;
+                const planId = document.getElementById('discount-plan-select')?.value;
+                const pct = parseInt(document.getElementById('discount-pct-input')?.value || '30');
+                const duration = parseInt(document.getElementById('discount-duration-input')?.value || '3');
+                const message = document.getElementById('discount-message-input')?.value || '';
+                const btn = e.target.querySelector('[type="submit"]');
+                btn.disabled = true; btn.textContent = 'Enviando...';
+                try {
+                    await plansCreateLoyaltyDiscount(userId, planId, pct, duration, message);
+                    document.getElementById('discount-modal')?.classList.add('hidden');
+                    showMessage('Descuento enviado', 'El usuario vera el descuento disponible en su panel.');
+                    btn.disabled = false; btn.textContent = 'Enviar';
+                } catch (err) {
+                    btn.disabled = false; btn.textContent = 'Enviar';
+                    showMessage('Error', err.message, true);
+                }
+            });
+        }
+
+        // Expose navigateTo to window for use in modules
+        window.navigateTo = navigateTo;
+
         // Initialization
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
@@ -1336,7 +1959,7 @@
                         }
                     } else {
                         console.log("User is logged out.");
-                        loadCartFromLocalStorage(); // Load guest cart if any
+                        loadCart(); // Load guest cart if any
                          // If on a protected page like 'profile', redirect
                         if (getCurrentPageId() === 'profile') {
                             navigateTo('home');
@@ -1346,7 +1969,7 @@
             } else {
                 console.error("Auth module not initialized. Auth features will not work.");
                 updateAuthUI(null); // Ensure UI reflects logged-out state
-                loadCartFromLocalStorage(); // Fallback to guest cart
+                loadCart(); // Fallback to guest cart
             }
 
 
