@@ -1,5 +1,54 @@
 import { supabase } from './supabase.js';
 
+export async function createStripeCheckout(planId) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('No hay sesion activa');
+
+  const origin = window.location.origin;
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'Apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
+        planId,
+        successUrl: `${origin}?checkout=success`,
+        cancelUrl: `${origin}?checkout=cancelled`,
+      }),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Error al crear el checkout');
+  return data;
+}
+
+export async function applyLoyaltyCoupon(discountId) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('No hay sesion activa');
+
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-loyalty-coupon`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'Apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ discountId }),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Error al aplicar el cupon');
+  return data;
+}
+
 export async function getPlans() {
   const { data, error } = await supabase
     .from('plans')

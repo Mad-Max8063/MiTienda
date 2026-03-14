@@ -2,7 +2,7 @@ import {
   getPlans, getUserSubscription, createSubscription, updateAutoScale,
   getMonthlyMetrics, getCurrentMonthMetrics, getPlanChangeLog,
   getPendingLoyaltyDiscount, respondToLoyaltyDiscount, getAdminSettings,
-  formatARS, getMonthName
+  formatARS, getMonthName, createStripeCheckout, applyLoyaltyCoupon
 } from './plans-service.js';
 
 let _supabaseAuth = null;
@@ -175,8 +175,17 @@ function attachPlansPageEvents(container, plans, userSub, user) {
 
     if (action === 'select-plan') {
       if (!user) { window.navigateTo && window.navigateTo('login'); return; }
-      const planId = btn.dataset.planId;
-      window.navigateTo && window.navigateTo('checkout', { planId });
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Redirigiendo...';
+        const planId = btn.dataset.planId;
+        const { url } = await createStripeCheckout(planId);
+        window.location.href = url;
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Seleccionar plan';
+        alert('Error al iniciar el pago: ' + err.message);
+      }
     }
 
     if (action === 'go-my-plan') {
@@ -419,10 +428,16 @@ function attachMyPlanEvents(container, user, userSub, pendingDiscount) {
       try {
         btn.disabled = true;
         await respondToLoyaltyDiscount(discountId, accept);
-        const banner = btn.closest('[data-action]')?.closest('.bg-amber-50') || container.querySelector('.bg-amber-50');
+        if (accept) {
+          try {
+            await applyLoyaltyCoupon(discountId);
+          } catch (_couponErr) {
+          }
+        }
+        const banner = btn.closest('.bg-amber-50') || container.querySelector('.bg-amber-50');
         if (banner) {
           banner.innerHTML = accept
-            ? `<p class="text-green-700 font-semibold text-center py-2">Descuento aplicado. Se verá reflejado en tu próximo cobro.</p>`
+            ? `<p class="text-green-700 font-semibold text-center py-2">Descuento aplicado. Se vera reflejado en tu proximo cobro.</p>`
             : `<p class="text-gray-500 text-center py-2">Descuento rechazado. Seguimos con vos.</p>`;
         }
       } catch (err) {
