@@ -79,6 +79,10 @@
         <footer class="bg-gray-800 text-white py-8 text-center">
             <p>&copy; <span id="current-year"></span> Growtenda. All rights reserved.</p>
             <p class="mt-2">Powered by AI</p>
+            <div class="mt-4 flex justify-center gap-6 text-sm text-gray-400">
+                <a href="#" data-page="privacy" class="hover:text-white transition-colors">Política de Privacidad</a>
+                <a href="#" data-page="terms" class="hover:text-white transition-colors">Términos y Condiciones</a>
+            </div>
         </footer>
 
         <!-- Loading Indicator -->
@@ -292,6 +296,88 @@
                 <div id="order-history-container" class="space-y-6">
                     <p class="text-textLight">Sin pedidos todavia.</p>
                 </div>
+                <div class="mt-10 pt-8 border-t border-gray-200">
+                    <h3 class="text-lg font-semibold text-red-600 mb-3">Zona de peligro</h3>
+                    <p class="text-sm text-gray-500 mb-4">Eliminar tu cuenta borrará todos tus datos permanentemente. Esta acción no se puede deshacer.</p>
+                    <button id="delete-account-btn" class="bg-red-50 text-red-600 border border-red-200 px-5 py-2 rounded-xl text-sm font-semibold hover:bg-red-100 transition-colors">Eliminar mi cuenta</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="privacy-page">
+        <div class="max-w-3xl mx-auto">
+            <h2 class="text-3xl font-bold mb-8 text-textDark">Política de Privacidad</h2>
+            <div class="bg-white p-8 rounded-lg shadow-md prose prose-sm max-w-none">
+                <p class="text-sm text-gray-400 mb-6">Última actualización: Marzo 2026</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">1. Datos que recopilamos</h3>
+                <p class="text-gray-600 mb-4">Growtenda recopila únicamente los datos necesarios para brindar el servicio:</p>
+                <ul class="list-disc list-inside text-gray-600 mb-6 space-y-1">
+                    <li><strong>Datos de cuenta:</strong> email, nombre completo y contraseña (cifrada).</li>
+                    <li><strong>Datos de suscripción:</strong> plan activo, historial de cambios de plan, métricas de ventas mensuales (montos agregados, no detalle de transacciones individuales).</li>
+                    <li><strong>Datos de pago:</strong> procesados directamente por MercadoPago. Growtenda NO almacena datos de tarjetas ni información bancaria.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">2. Datos que NO recopilamos</h3>
+                <ul class="list-disc list-inside text-gray-600 mb-6 space-y-1">
+                    <li>DNI, CUIL/CUIT u otros documentos de identidad.</li>
+                    <li>Datos bancarios directos (los gestiona MercadoPago).</li>
+                    <li>Datos de geolocalización precisa.</li>
+                    <li>Datos de menores de edad.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">3. Uso de los datos</h3>
+                <p class="text-gray-600 mb-6">Usamos tus datos exclusivamente para: gestionar tu cuenta y suscripción, calcular el escalado automático de plan basado en tus ventas, aplicar descuentos de lealtad, y enviarte notificaciones sobre cambios en tu plan o precios.</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">4. Seguridad</h3>
+                <p class="text-gray-600 mb-6">Todos los datos se transmiten cifrados (HTTPS/TLS). La base de datos utiliza cifrado en reposo. El acceso a los datos está protegido por Row Level Security (RLS), lo que garantiza que cada usuario solo puede acceder a sus propios datos.</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">5. Tus derechos (Ley 25.326)</h3>
+                <p class="text-gray-600 mb-4">De acuerdo con la Ley de Protección de Datos Personales de Argentina (Ley 25.326), tenés derecho a:</p>
+                <ul class="list-disc list-inside text-gray-600 mb-6 space-y-1">
+                    <li><strong>Acceder</strong> a tus datos personales almacenados.</li>
+                    <li><strong>Rectificar</strong> datos incorrectos o desactualizados.</li>
+                    <li><strong>Suprimir</strong> tus datos personales (eliminando tu cuenta desde tu perfil).</li>
+                    <li><strong>Oponerte</strong> al tratamiento de tus datos.</li>
+                </ul>
+                <p class="text-gray-600 mb-6">Para ejercer estos derechos, podés eliminar tu cuenta directamente desde la sección "Mi Perfil", o contactarnos por email.</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">6. Retención de datos</h3>
+                <p class="text-gray-600 mb-6">Conservamos tus datos mientras tu cuenta esté activa. Al eliminar tu cuenta, todos tus datos personales se eliminan permanentemente dentro de las 48 horas siguientes. Los registros anonimizados de transacciones pueden conservarse con fines estadísticos.</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">7. Contacto</h3>
+                <p class="text-gray-600">Para consultas sobre privacidad, escribinos a: <strong>privacidad@growtenda.com</strong></p>
+            </div>
+        </div>
+    </template>
+
+    <template id="terms-page">
+        <div class="max-w-3xl mx-auto">
+            <h2 class="text-3xl font-bold mb-8 text-textDark">Términos y Condiciones</h2>
+            <div class="bg-white p-8 rounded-lg shadow-md prose prose-sm max-w-none">
+                <p class="text-sm text-gray-400 mb-6">Última actualización: Marzo 2026</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">1. Aceptación</h3>
+                <p class="text-gray-600 mb-6">Al registrarte en Growtenda, aceptás estos términos y condiciones. Si no estás de acuerdo, no utilices el servicio.</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">2. Descripción del servicio</h3>
+                <p class="text-gray-600 mb-6">Growtenda es una plataforma SaaS de comercio electrónico que ofrece planes de suscripción con escalado automático basado en el volumen de ventas del usuario. El servicio incluye herramientas de gestión de tienda, métricas de ventas, y panel de administración.</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">3. Planes y precios</h3>
+                <ul class="list-disc list-inside text-gray-600 mb-6 space-y-1">
+                    <li>Los precios están expresados en pesos argentinos (ARS).</li>
+                    <li>Los precios se ajustan mensualmente por inflación, con aviso previo.</li>
+                    <li>El escalado automático de plan se basa en las ventas mensuales del usuario.</li>
+                    <li>Los cambios de plan automáticos se notifican dentro de la plataforma.</li>
+                    <li>El período de prueba gratuita es de 30 días, sin requerir datos de pago.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">4. Pagos</h3>
+                <p class="text-gray-600 mb-6">Los pagos se procesan a través de MercadoPago. Growtenda no almacena datos de tarjetas o cuentas bancarias. Los cobros se realizan mensualmente de forma automática.</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">5. Cancelación</h3>
+                <p class="text-gray-600 mb-6">Podés cancelar tu suscripción en cualquier momento. La cancelación se hace efectiva al final del período de facturación vigente. No hay reembolsos por períodos parciales.</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">6. Responsabilidades del usuario</h3>
+                <ul class="list-disc list-inside text-gray-600 mb-6 space-y-1">
+                    <li>Mantener la confidencialidad de tus credenciales de acceso.</li>
+                    <li>Usar la plataforma de acuerdo con las leyes vigentes.</li>
+                    <li>No utilizar el servicio para actividades ilegales o fraudulentas.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">7. Limitación de responsabilidad</h3>
+                <p class="text-gray-600 mb-6">Growtenda se compromete a mantener el servicio disponible con un uptime del 99.9%. No nos hacemos responsables por pérdidas derivadas de interrupciones por causas ajenas, ni por decisiones comerciales basadas en los datos de la plataforma.</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">8. Modificaciones</h3>
+                <p class="text-gray-600 mb-6">Nos reservamos el derecho de modificar estos términos. Los cambios serán notificados con al menos 30 días de anticipación por email.</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">9. Ley aplicable</h3>
+                <p class="text-gray-600">Estos términos se rigen por las leyes de la República Argentina. Cualquier disputa será resuelta en los tribunales ordinarios de la Ciudad Autónoma de Buenos Aires.</p>
             </div>
         </div>
     </template>
@@ -919,6 +1005,38 @@
             renderPage('profile', pageContent);
             const container = document.getElementById('order-history-container');
             if (container) container.innerHTML = '<p class="text-textLight">El historial de ordenes estara disponible proximamente.</p>';
+
+            document.getElementById('delete-account-btn')?.addEventListener('click', async () => {
+                if (!confirm('¿Estás seguro? Esta acción eliminará tu cuenta y todos tus datos permanentemente. No se puede deshacer.')) return;
+                if (!confirm('ÚLTIMA CONFIRMACIÓN: ¿Realmente querés eliminar tu cuenta?')) return;
+                showLoading(true);
+                try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) throw new Error('No hay sesión activa');
+                    const response = await fetch(
+                        `https://dpfmozdorvuivfhmreit.supabase.co/functions/v1/delete-account`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${session.access_token}`,
+                            },
+                        }
+                    );
+                    if (!response.ok) {
+                        const data = await response.json().catch(() => ({}));
+                        throw new Error(data.error || 'Error al eliminar la cuenta');
+                    }
+                    await supabase.auth.signOut();
+                    showMessage('Cuenta eliminada', 'Tu cuenta y todos tus datos han sido eliminados permanentemente.');
+                    navigateTo('home');
+                } catch (error) {
+                    console.error('Delete account error:', error);
+                    showMessage('Error', error.message || 'No se pudo eliminar la cuenta. Contacta soporte.', true);
+                } finally {
+                    showLoading(false);
+                }
+            });
         }
 
 
@@ -963,6 +1081,12 @@
                     break;
                 case 'admin':
                     renderAdminPageContent();
+                    break;
+                case 'privacy':
+                    renderPage('privacy', document.getElementById('privacy-page').content.cloneNode(true));
+                    break;
+                case 'terms':
+                    renderPage('terms', document.getElementById('terms-page').content.cloneNode(true));
                     break;
                 default:
                     console.warn(`Unknown page: ${pageId}. Navigating to home.`);
@@ -1127,7 +1251,52 @@
             }
         }
         
-        // Checkout
+        // Checkout — Mercado Pago Integration
+        const SUPABASE_FUNCTIONS_URL = 'https://dpfmozdorvuivfhmreit.supabase.co/functions/v1';
+
+        async function plansCreateMPCheckout(planId) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('No hay sesion activa');
+            const origin = window.location.origin;
+            const response = await fetch(
+                `${SUPABASE_FUNCTIONS_URL}/create-checkout`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`,
+                    },
+                    body: JSON.stringify({
+                        planId,
+                        successUrl: `${origin}?checkout=success`,
+                        cancelUrl: `${origin}?checkout=cancelled`,
+                    }),
+                }
+            );
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Error al crear el checkout');
+            return data;
+        }
+
+        async function plansApplyLoyaltyCoupon(discountId) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('No hay sesion activa');
+            const response = await fetch(
+                `${SUPABASE_FUNCTIONS_URL}/create-loyalty-coupon`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`,
+                    },
+                    body: JSON.stringify({ discountId }),
+                }
+            );
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Error al aplicar el cupon');
+            return data;
+        }
+
         async function handleCheckout() {
             if (cart.length === 0) {
                 showMessage("Carrito vacio", "Agrega productos al carrito antes de continuar.", true);
@@ -1141,6 +1310,8 @@
 
             showLoading(true);
             try {
+                // For now, process order locally (MP product checkout is a future feature)
+                // The MP integration exists for plan subscriptions, not product purchases
                 showMessage("Pedido realizado", "Tu pedido fue procesado. Gracias por comprar en Growtenda!");
                 cart = [];
                 saveCart();
@@ -1397,9 +1568,30 @@
             });
             document.getElementById('go-my-plan-btn')?.addEventListener('click', () => navigateTo('my-plan'));
             document.querySelectorAll('[data-select-plan]').forEach(btn => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', async () => {
                     if (!user) { navigateTo('login'); return; }
-                    showMessage('Seleccion de plan', 'Para cambiar tu plan, ingresa a "Mi Plan" y selecciona el plan deseado.');
+                    if (!userSub) {
+                        // No subscription yet — start trial or subscribe
+                        const planId = btn.dataset.selectPlan;
+                        btn.disabled = true;
+                        btn.textContent = 'Procesando...';
+                        try {
+                            const result = await plansCreateMPCheckout(planId);
+                            if (result.init_point) {
+                                window.location.href = result.init_point;
+                            } else {
+                                showMessage('Error', 'No se pudo iniciar el pago. Intenta de nuevo.', true);
+                                btn.disabled = false;
+                                btn.textContent = 'Seleccionar plan';
+                            }
+                        } catch (err) {
+                            btn.disabled = false;
+                            btn.textContent = 'Seleccionar plan';
+                            showMessage('Error', err.message, true);
+                        }
+                    } else {
+                        showMessage('Cambio de plan', 'El cambio de plan se gestiona automáticamente según tus ventas. Si necesitás cambiar manualmente, contacta soporte.');
+                    }
                 });
             });
         }
@@ -1697,6 +1889,17 @@
                 const notes = document.getElementById('inflation-notes')?.value || '';
                 const paidPlans = plans.filter(p => !p.is_free_trial);
                 if (isNaN(pct) || pct <= 0) { showMessage('Error', 'Ingresa un porcentaje valido.', true); return; }
+
+                // Guard: prevent double inflation application in the same month
+                if (settings?.last_inflation_applied_at) {
+                    const lastApplied = new Date(settings.last_inflation_applied_at);
+                    const now = new Date();
+                    if (lastApplied.getFullYear() === now.getFullYear() && lastApplied.getMonth() === now.getMonth()) {
+                        showMessage('Ajuste ya aplicado', `Ya se aplicó un ajuste de inflación este mes (${lastApplied.toLocaleDateString('es-AR')}). Esperá al próximo mes para aplicar otro.`, true);
+                        return;
+                    }
+                }
+
                 if (!confirm(`Confirmas aplicar un ajuste del ${pct}% a ${paidPlans.length} planes?`)) return;
                 const btn = document.getElementById('apply-inflation-btn');
                 btn.disabled = true; btn.textContent = 'Aplicando...';
@@ -1705,6 +1908,8 @@
                         const newPrice = Math.round(plan.price_ars * (1 + pct/100));
                         await plansApplyInflation(plan.id, newPrice, plan.price_ars, pct, user.id, notes);
                     }
+                    // Update last_inflation_applied_at
+                    await plansUpdateSettings({ last_inflation_applied_at: new Date().toISOString(), monthly_inflation_percentage: pct });
                     showMessage('Precios actualizados', `Se aplicó el ajuste del ${pct}% a todos los planes.`);
                     setTimeout(() => navigateTo('admin'), 1500);
                 } catch (err) {
